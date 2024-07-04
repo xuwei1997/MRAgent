@@ -35,7 +35,7 @@ def ollama_chat(text, model_name='llama2'):
 # 调用Gemini
 def gemini_chat(text, model_name='gemini-1.5-pro-latest', AI_key=None):
     # sleep 1s to avoid 429 error
-    time.sleep(10)
+    # time.sleep(10)
     genai.configure(api_key=AI_key)
     model = genai.GenerativeModel(model_name)
     response = model.generate_content(text)
@@ -122,8 +122,8 @@ def llm_chat(text, model_name, AI_key=None):
     elif 'gemini' in model_name:
         return gemini_chat(text, model_name, AI_key)
     elif 'claude' in model_name:
-        # return anthropic_chat(text, model_name, AI_key)
-        return anthropic_chat_openai(text, AI_key, model_name)
+        return anthropic_chat(text, model_name, AI_key)
+        # return anthropic_chat_openai(text, AI_key, model_name)
     elif 'qwen-max' in model_name:
         return qwen_chat(text, AI_key, model_name)
     else:
