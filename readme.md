@@ -46,6 +46,7 @@ You can also run LLM locally, and we currently support all open source models ru
 You need to follow the steps to install ollama and follow the ollama python support package:
 
 ```shell
+curl -fsSL https://ollama.com/install.sh | sh
 pip install ollama
 ```
 
@@ -185,6 +186,13 @@ agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
 ```
 
 ## Experiments
+1. step_1_test_out.py
+2. step_1_test_SimCSE.py
+3. step_2_test.py
+4. step_3_test.py
+5. step_5_test.py
+6. step_9_test_out.py
+7. step_9_test_SimCSE.py
 
 > TODO
 
