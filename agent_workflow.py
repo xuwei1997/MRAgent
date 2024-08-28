@@ -803,7 +803,7 @@ class MRAgent:
 
 
 if __name__ == '__main__':
-    mr_key = ''    # 提示词中已经加入ID
+    mr_key = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImFwaS1qd3QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhcGkub3Blbmd3YXMuaW8iLCJhdWQiOiJhcGkub3Blbmd3YXMuaW8iLCJzdWIiOiI2NzA1MjU3NDRAcXEuY29tIiwiaWF0IjoxNzI0ODE3ODIwLCJleHAiOjE3MjYwMjc0MjB9.LW149mOujc5_Fwk4KxVncGcRudg3yJBarIlPOYEAool_UcDWf8HJESxl6tfrs7kPTU9r2jnxoCTb-w9vEe4LTAvUBFIUNZ5p38sW2S_d4VU1O2fpRmVuo7inlmJeTkFsoIMGI_Mg6559SFczs8nbYCkBQh515K6-NHU4vRMZS8fMVSQRfTwgVJKxStnzZweOC4XBvBwCb8RfUj3ypkRt_cHsn_dNyjkqEkuJ4Af98RmZrR6g6M9F8CcPwuoCumfsT9CJKevBa0aF0-yqerW8HY2_AQYj2J6-TuqvIR2itNlWMFv6FBP99fRSqSfHiY8-tmh0Calq1EZSvwJgmZ8CRQ'    # 提示词中已经加入ID
 
     # agent = MRAgent(outcome='back pain', AI_key='',
     #                 model='MR', LLM_model='gemini-pro')
@@ -814,7 +814,7 @@ if __name__ == '__main__':
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
     agent = MRAgent(outcome='back pain', model='MR', LLM_model='qwen-max',
-                    AI_key='', gwas_token=mr_key, bidirectional=True,
+                    AI_key='sk-afac4adcb4974723a26f4a05ee586dbc', gwas_token=mr_key, bidirectional=True,
                     introduction=True, num=300)
     agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
 
