@@ -203,7 +203,7 @@ class MRAgent:
         df2['sID'] = range(0, len(df2))
         # print(df2)
 
-        # 3.4 从df1中提取OE，调用GPT，寻找同义词，并合并到df2中。要求nID继续递增，但是sID还是原来OE的sID
+        # 3.4 从df1中提取OE，寻找同义词，并合并到df2中。要求nID继续递增，但是sID还是原来OE的sID
         if self.synonyms:
             for index, row in df2.iterrows():
                 # 3.4.1 提取OE和sID
@@ -803,9 +803,7 @@ class MRAgent:
 
 
 if __name__ == '__main__':
-    mr_key = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImFwaS1qd3QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhcGkub3Blbmd3YXMuaW8iLCJhdWQiOiJhcGkub3Blbmd3YXMuaW8iLCJzdWIiOiJ4dXdlaV9jaG5AZm94bWFpbC5jb20iLCJpYXQiOjE3MTgwNzcxNDQsImV4cCI6MTcxOTI4Njc0NH0.kRN0jPcFdbrRT_icSm-LJUJGBCkqI_rlFTBzXnkrhueS43PemIlVXxukkJLJjQjw_VIqcl7TmDaStbyJzZYcWA7UArdDeGZVuiYxtx5hnA-pV0knBKbE7OxE2NPVZvZUYHOZCI2FPixRNGo6ReftoZKQkDnikrJ0Yz7bLuBYQtdlY9puirK5XUFf4Q0eIUPajvF9krT9RKEgYX4Cs9mNagiEo3acD5inpkyCSxbSZdOcPXxyanozc9xRxcoGus-Kb5sDmcN5zpTd14xnzFdyjXnzvhMtPb2OdO3Sipr1hTchlUOnmV34xGWh-UzoQfkI1an2lpeYZXLWyuD5Bhmrkg'
-
-    # 提示词中已经加入ID
+    mr_key = ''    # 提示词中已经加入ID
 
     # agent = MRAgent(outcome='back pain', AI_key='',
     #                 model='MR', LLM_model='gemini-pro')
@@ -815,9 +813,9 @@ if __name__ == '__main__':
     # agent.run(step=[9])
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
-    agent = MRAgent(outcome='back pain', model='MR', LLM_model='gpt-4o',
+    agent = MRAgent(outcome='back pain', model='MR', LLM_model='qwen-max',
                     AI_key='', gwas_token=mr_key, bidirectional=True,
                     introduction=True, num=300)
-    agent.run(step=[9])
+    agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     # TODO 输出时的暴露结局的顺序需要注意
