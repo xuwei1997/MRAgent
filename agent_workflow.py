@@ -20,7 +20,10 @@ import json
 
 class MRAgent:
     def __init__(self, mode='O', exposure=None, outcome=None, AI_key=None, model='MR', num=100, bidirectional=False,
-                 synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', gwas_token=None):
+                 synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', gwas_token=None,
+                 opengwas_mode='csv'):
+        # 加多一个参数，控制是否从csv中读取gwas列表'csv'或'online'
+
         self.exposure = exposure
         self.outcome = outcome
         self.AI_key = AI_key
@@ -46,6 +49,10 @@ class MRAgent:
         self.num = num
         # gwas_token
         self.gwas_token = gwas_token
+        # opengwas模式
+        self.opengwas_mode = opengwas_mode
+        if self.opengwas_mode == 'csv':
+            self.opengwas_csv_init()
 
     # 定义path并创建文件夹
     def define_path(self):
@@ -175,7 +182,7 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     #  同义词扩充。提取出所有O和E，新建2表，去重，然后GPT寻找同义词
-    def step3(self):
+    def  step3(self):
         # 3.1 读取step2的结果
         step2_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
         df = pd.read_csv(step2_path)
@@ -227,6 +234,16 @@ class MRAgent:
         df2.to_csv(out_path, index=False, encoding='utf-8')
 
     # 查看OE是否在opengwas中
+    def opengwas_csv_init(self):
+        # 读取opengwas csv文件
+        opengwas_path = 'opengwas.csv'
+        df = pd.read_csv(opengwas_path)
+        self.opengwas_df = df
+
+
+    def check_keyword_in_opengwas_csv(self, keyword):
+        pass
+
     def step4(self):
         # 4.1 读取step3的结果
         step3_path = os.path.join(self.path, 'Outcome_SNP.csv')
@@ -234,6 +251,8 @@ class MRAgent:
         # print(df)
 
         # 4.2 查看OE是否在opengwas中
+        # TODO 从表格中获取 改heck_keyword_in_opengwas
+
         df['opengwas'] = df.apply(lambda x: check_keyword_in_opengwas(x['OE']), axis=1)
         print(df)
 
@@ -245,6 +264,7 @@ class MRAgent:
     # 获取OpenGWAS数据库中的GWAS ID
     def step5_get_gwas_id(self, keyword):
         json_list = get_gwas_id(keyword)
+        # TODO get_gwas_id改
         template = gwas_id_text
         t = template.format(keyword=keyword, json_list=json_list)
         gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
@@ -299,6 +319,7 @@ class MRAgent:
         # df_snp = df2[df2['opengwas'] == True]
 
         # 6.3 逐行迭代df_noMR
+        # TODO 加入人群种族
         for index, row in df_noMR.iterrows():
             # 6.3.1 提取Outcome和Exposure
             Outcome = row['Outcome']
@@ -803,7 +824,7 @@ class MRAgent:
 
 
 if __name__ == '__main__':
-    mr_key = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImFwaS1qd3QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhcGkub3Blbmd3YXMuaW8iLCJhdWQiOiJhcGkub3Blbmd3YXMuaW8iLCJzdWIiOiI2NzA1MjU3NDRAcXEuY29tIiwiaWF0IjoxNzI0ODE3ODIwLCJleHAiOjE3MjYwMjc0MjB9.LW149mOujc5_Fwk4KxVncGcRudg3yJBarIlPOYEAool_UcDWf8HJESxl6tfrs7kPTU9r2jnxoCTb-w9vEe4LTAvUBFIUNZ5p38sW2S_d4VU1O2fpRmVuo7inlmJeTkFsoIMGI_Mg6559SFczs8nbYCkBQh515K6-NHU4vRMZS8fMVSQRfTwgVJKxStnzZweOC4XBvBwCb8RfUj3ypkRt_cHsn_dNyjkqEkuJ4Af98RmZrR6g6M9F8CcPwuoCumfsT9CJKevBa0aF0-yqerW8HY2_AQYj2J6-TuqvIR2itNlWMFv6FBP99fRSqSfHiY8-tmh0Calq1EZSvwJgmZ8CRQ'    # 提示词中已经加入ID
+    mr_key = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImFwaS1qd3QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhcGkub3Blbmd3YXMuaW8iLCJhdWQiOiJhcGkub3Blbmd3YXMuaW8iLCJzdWIiOiI2NzA1MjU3NDRAcXEuY29tIiwiaWF0IjoxNzI0ODE3ODIwLCJleHAiOjE3MjYwMjc0MjB9.LW149mOujc5_Fwk4KxVncGcRudg3yJBarIlPOYEAool_UcDWf8HJESxl6tfrs7kPTU9r2jnxoCTb-w9vEe4LTAvUBFIUNZ5p38sW2S_d4VU1O2fpRmVuo7inlmJeTkFsoIMGI_Mg6559SFczs8nbYCkBQh515K6-NHU4vRMZS8fMVSQRfTwgVJKxStnzZweOC4XBvBwCb8RfUj3ypkRt_cHsn_dNyjkqEkuJ4Af98RmZrR6g6M9F8CcPwuoCumfsT9CJKevBa0aF0-yqerW8HY2_AQYj2J6-TuqvIR2itNlWMFv6FBP99fRSqSfHiY8-tmh0Calq1EZSvwJgmZ8CRQ'  # 提示词中已经加入ID
 
     # agent = MRAgent(outcome='back pain', AI_key='',
     #                 model='MR', LLM_model='gemini-pro')
@@ -816,6 +837,6 @@ if __name__ == '__main__':
     agent = MRAgent(outcome='back pain', model='MR', LLM_model='qwen-max',
                     AI_key='sk-afac4adcb4974723a26f4a05ee586dbc', gwas_token=mr_key, bidirectional=True,
                     introduction=True, num=300)
-    agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
+    agent.run(step=[3])
 
     # TODO 输出时的暴露结局的顺序需要注意
