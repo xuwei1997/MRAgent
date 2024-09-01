@@ -852,7 +852,7 @@ class MRAgent:
                 # Outcome_id_list, Exposure_id_list 笛卡尔积
                 # 此处应该加入人群种族的判断
                 cartesian_product = [(i, j) for i in Exposure_id_list for j in Outcome_id_list]
-                if self.opengwas_mode='csv':
+                if self.opengwas_mode == 'csv':
                     cartesian_product = self.step9_gwas_poppulation(cartesian_product)
                 print(cartesian_product)
                 # 运行MR
@@ -865,7 +865,7 @@ class MRAgent:
                     if not os.path.exists(path):
                         os.makedirs(path)
                     cartesian_product = [(j, i) for i in Exposure_id_list for j in Outcome_id_list]
-                    if self.opengwas_mode='csv':
+                    if self.opengwas_mode == 'csv':
                         cartesian_product = self.step9_gwas_poppulation(cartesian_product)
                     print(cartesian_product)
                     # 运行MR
