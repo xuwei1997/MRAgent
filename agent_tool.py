@@ -404,15 +404,15 @@ def get_synonyms(term, api_key):
         response = requests.request("GET", url, headers=headers, data=payload)
         # print(response.text.encode('utf8'))
         cui = response.json()["result"]["results"][0]["ui"]
-        print(cui)
+        # print(cui)
 
         # 获取同义词
-        url = "https://uts-ws.nlm.nih.gov/rest/content/current/CUI/{cui}/atoms?apiKey={apiKey}&ttys=&language=ENG&pageSize=200".format(
+        url = "https://uts-ws.nlm.nih.gov/rest/content/current/CUI/{cui}/atoms?apiKey={apiKey}&ttys=&language=ENG&pageSize=25".format(
             apiKey=api_key, cui=cui)
         payload = {}
         headers = {}
         response = requests.request("GET", url, headers=headers, data=payload)
-        print(response.json())
+        # print(response.json())
         synonyms = [result["name"] for result in response.json()["result"]]
 
         # 全体小写
@@ -425,30 +425,12 @@ def get_synonyms(term, api_key):
         print(e)
         synonyms = []
 
-    print(len(synonyms))
+    # print(len(synonyms))
+    print(synonyms)
 
     return synonyms
 
 
 if __name__ == '__main__':
-    # c = get_gwas_id('BMI')
-    # print(c)
-    # a = pubmed_crawler('In BMI We Trust: Reframing the Body Mass Index as a Measure of Health', 1, 'relevance')
-    # print(a)
-    #
-    # b = get_paper_details('In BMI We Trust: Reframing the Body Mass Index as a Measure of Health')
-    # print(b)
-    # MRtool2("ebi-a-GCST90018926", "finn-b-C3_GBM", "Type 2 diabetes_glioblastoma//Type 2 diabetes_glioblastoma")
-
-    # # print(__file__)
-
-    # MRtool("ebi-a-GCST90018875", "ukb-a-16", "Lung cancer//Occupational exposure_Lung cancer")
-    # MRtool("ebi-a-GCST90018875", "ukb-a-16", "Lung cancer//Occupational exposure_Lung cancer")
-
-    # current_dir = os.path.dirname(os.path.abspath(__file__))
-    # print(current_dir)
-    # path = os.path.join(current_dir, r"Lung cancer\Occupational exposure_Lung cancer")
-    # print(path)
-    # MRtool2("ebi-a-GCST90018875", "ukb-a-16", path)
-    # MRtool_MOE("ebi-a-GCST90018875", "ukb-a-16", path)
-    gpt_out = r"""[{"index":121, "Outcome": "Low back pain", "Exposure": "Smoking", "title": "The association of the STarT Back Screening Tool and type of leg pain with low back pain disability trajectories: a prospective cohort study."},{"index":121, "Outcome": "Low back pain", "Exposure": "Leg pain", "title": "The association of the STarT Back Screening Tool and type of leg pain with low back pain disability trajectories: a prospective cohort study."},{"index":184, "Outcome": "Low back pain", "Exposure": "Physical disability", "title": "Back morphology and walking patterns mean 13.8 years after surgery for lumbar disk herniation in adolescents."},{"index":221, "Outcome": "Low back pain", "Exposure": "Disc height", "title": "Global, Regional, and National Change Patterns in the Incidence of Low Back Pain From 1990 to 2019 and Its Predicted Level in the Next Decade."},{"index":300, "Outcome": "Low back pain", "Exposure": "Trunk resistance to mechanical perturbations", "title": "Trunk resistance to mechanical perturbations, associations with low back pain, pain-related cognitions and movement precision [Retraction notice]."},{"index":321, "Outcome": "Low back pain", "Exposure": "Spinal Injection Timing", "title": "The Influence of Preoperative Spinal Injection Timing on Postoperative Complications of Lumbar Decompression Surgery."},{"index":379, "Outcome": "Low back pain", "Exposure": "Lumbar segments", "title": "Regression-Based Machine Learning for Predicting Lifting Movement Pattern Change in People with Low Back Pain."},{"index":379, "Outcome": "Low back pain", "Exposure": "Movement patterns", "title": "Regression-Based Machine Learning for Predicting Lifting Movement Pattern Change in People with Low Back Pain."}]"""
+    # get_synonyms('BMI', 'd6382a8b-5ca8-493a-98ca-2b02fffcaeb5')
+    print(get_gwas_id('BMI'))

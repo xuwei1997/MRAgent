@@ -16,6 +16,8 @@ import time
 import sys
 from LLM import llm_chat
 import json
+import difflib
+import math
 
 
 class MRAgent:
@@ -182,7 +184,7 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     #  同义词扩充。提取出所有O和E，新建2表，去重，然后GPT寻找同义词
-    def  step3(self):
+    def step3(self):
         # 3.1 读取step2的结果
         step2_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
         df = pd.read_csv(step2_path)
@@ -238,11 +240,25 @@ class MRAgent:
         # 读取opengwas csv文件
         opengwas_path = 'opengwas.csv'
         df = pd.read_csv(opengwas_path)
+        df['trait'] = df['trait'].astype(str)
         self.opengwas_df = df
-
+        self.opengwas_list = df['trait'].tolist()
 
     def check_keyword_in_opengwas_csv(self, keyword):
-        pass
+        # 从opengwas_df中查找keyword
+        # 模糊匹配方式
+        # matches = difflib.get_close_matches(keyword, self.opengwas_list, n=10, cutoff=0.4)
+        # print(keyword)
+        # # print(matches)
+        # if len(matches) > 0:
+        #     print('True')
+        #     return True
+        # else:
+        #     print('False')
+        #     return False
+
+        # 字符串匹配,不区分大小写
+        return any(keyword.lower() in s.lower() for s in self.opengwas_list)
 
     def step4(self):
         # 4.1 读取step3的结果
@@ -251,9 +267,10 @@ class MRAgent:
         # print(df)
 
         # 4.2 查看OE是否在opengwas中
-        # TODO 从表格中获取 改heck_keyword_in_opengwas
-
-        df['opengwas'] = df.apply(lambda x: check_keyword_in_opengwas(x['OE']), axis=1)
+        if self.opengwas_mode == 'csv':
+            df['opengwas'] = df.apply(lambda x: self.check_keyword_in_opengwas_csv(x['OE']), axis=1)
+        elif self.opengwas_mode == 'online':
+            df['opengwas'] = df.apply(lambda x: check_keyword_in_opengwas(x['OE']), axis=1)
         print(df)
 
         # 4.3 保存为csv
@@ -262,9 +279,56 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     # 获取OpenGWAS数据库中的GWAS ID
+    def get_gwas_id_csv(self, keyword):
+        # 根据opengwas_df中的'trait'列，查找与keyword字符串匹配（不区分大小写）的行
+        # 查self.opengwas_list找匹配的行，字符串匹配，不区分大小写
+        trait_list = []
+        for s in self.opengwas_list:
+            if keyword.lower() in s.lower():
+                trait_list.append(s)
+        # trait_list = (s for s in self.opengwas_list if keyword.lower() in s.lower())
+        # 如果trait_list长度大于30，则取前30个
+        if len(trait_list) > 30:
+            trait_list = trait_list[:30]
+        # 找到self.opengwas_df中匹配的行
+        df = self.opengwas_df[self.opengwas_df['trait'].isin(trait_list)]
+        # print(df)
+
+        # 转换为json list
+        json_list = []
+        # 逐行获取df
+        for index, row in df.iterrows():
+            # 提取gwas_id
+            gwas_id = row['id']
+            # 判断year的数据类型为float，则转换为int
+            year = row['year']
+            if not math.isnan(year):
+                year = int(year)
+
+            trait = row['trait']
+            consortium = row['consortium']
+
+            samplesize = row['sample_size']
+            if not math.isnan(samplesize):
+                samplesize = int(samplesize)
+
+            nsnp = row['nsnp']
+            if not math.isnan(nsnp):
+                nsnp = int(nsnp)
+
+            # # 转换为json 保存了 GWAS ID、Year、Trait、Consortium、Sample size、Number of SNPs
+            json_list.append(json.dumps({'gwas_id': gwas_id, 'year': year, 'trait': trait, 'consortium': consortium,
+                                         'Sample size': samplesize, 'Number of SNPs': nsnp}))
+        print(json_list)
+
+        return json_list
+
     def step5_get_gwas_id(self, keyword):
-        json_list = get_gwas_id(keyword)
-        # TODO get_gwas_id改
+        if self.opengwas_mode == 'online':
+            json_list = get_gwas_id(keyword)
+        elif self.opengwas_mode == 'csv':
+            json_list = self.get_gwas_id_csv(keyword)
+        # get_gwas_id改为csv模式
         template = gwas_id_text
         t = template.format(keyword=keyword, json_list=json_list)
         gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
@@ -291,6 +355,8 @@ class MRAgent:
 
         # 5.2 取出opengwas为True的行
         df_oe = df[df['opengwas'] == True]
+        # 按照OE去重
+        df_oe = df_oe.drop_duplicates(subset=['OE'])
 
         # 5.3 获取df_oe所有相关gwas_id
         df_oe['gwas_id'] = df_oe.apply(lambda x: self.step5_get_gwas_id(x['OE']), axis=1)
@@ -319,7 +385,6 @@ class MRAgent:
         # df_snp = df2[df2['opengwas'] == True]
 
         # 6.3 逐行迭代df_noMR
-        # TODO 加入人群种族
         for index, row in df_noMR.iterrows():
             # 6.3.1 提取Outcome和Exposure
             Outcome = row['Outcome']
@@ -330,6 +395,7 @@ class MRAgent:
             outcome_id = df_snp[df_snp['OE'] == Outcome]['sID']
             exposure_id = df_snp[df_snp['OE'] == Exposure]['sID']
             # 将提取出的id转换为int
+            # print(outcome_id, exposure_id)
             outcome_id = outcome_id.to_numpy()[0]
             exposure_id = exposure_id.to_numpy()[0]
             # print(outcome_id, exposure_id)
@@ -773,6 +839,7 @@ class MRAgent:
                 if not os.path.exists(path):
                     os.makedirs(path)
                 # Outcome_id_list, Exposure_id_list 笛卡尔积
+                # TODO 此处应该加入人群种族的判断
                 cartesian_product = [(i, j) for i in Exposure_id_list for j in Outcome_id_list]
                 print(cartesian_product)
                 # 运行MR
@@ -837,6 +904,6 @@ if __name__ == '__main__':
     agent = MRAgent(outcome='back pain', model='MR', LLM_model='qwen-max',
                     AI_key='sk-afac4adcb4974723a26f4a05ee586dbc', gwas_token=mr_key, bidirectional=True,
                     introduction=True, num=300)
-    agent.run(step=[3])
+    agent.run(step=[8])
 
     # TODO 输出时的暴露结局的顺序需要注意
