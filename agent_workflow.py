@@ -774,6 +774,17 @@ class MRAgent:
             print(e)
             print('LLM_conclusion Error')
 
+    # 确定cartesian_product的poppulation是否一致
+    def step9_gwas_poppulation(self, cartesian_product):
+        out_cartesian_product = []
+        for i, j in cartesian_product:
+            # 从self.opengwas_df中查找i和j的population
+            i_population = self.opengwas_df[self.opengwas_df['id'] == i]['population'].values[0]
+            j_population = self.opengwas_df[self.opengwas_df['id'] == j]['population'].values[0]
+            if i_population == j_population:
+                out_cartesian_product.append((i, j))
+        return out_cartesian_product
+
     # 运行MR
     def step9(self):
         # 9.1 读取mr_run.csv
@@ -839,8 +850,10 @@ class MRAgent:
                 if not os.path.exists(path):
                     os.makedirs(path)
                 # Outcome_id_list, Exposure_id_list 笛卡尔积
-                # TODO 此处应该加入人群种族的判断
+                # 此处应该加入人群种族的判断
                 cartesian_product = [(i, j) for i in Exposure_id_list for j in Outcome_id_list]
+                if self.opengwas_mode='csv':
+                    cartesian_product = self.step9_gwas_poppulation(cartesian_product)
                 print(cartesian_product)
                 # 运行MR
                 self.step9_run_mr_LLM(Exposure=Exposure, Outcome=Outcome, path=path,
@@ -852,6 +865,8 @@ class MRAgent:
                     if not os.path.exists(path):
                         os.makedirs(path)
                     cartesian_product = [(j, i) for i in Exposure_id_list for j in Outcome_id_list]
+                    if self.opengwas_mode='csv':
+                        cartesian_product = self.step9_gwas_poppulation(cartesian_product)
                     print(cartesian_product)
                     # 运行MR
                     self.step9_run_mr_LLM(Exposure=Outcome, Outcome=Exposure, path=path,
@@ -903,7 +918,7 @@ if __name__ == '__main__':
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
     agent = MRAgent(outcome='back pain', model='MR', LLM_model='qwen-max',
                     AI_key='sk-afac4adcb4974723a26f4a05ee586dbc', gwas_token=mr_key, bidirectional=True,
-                    introduction=True, num=300)
-    agent.run(step=[8])
+                    introduction=False, num=300)
+    agent.run(step=[9])
 
     # TODO 输出时的暴露结局的顺序需要注意
