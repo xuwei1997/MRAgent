@@ -505,6 +505,7 @@ class MRAgent:
 
     # 调用GPT解释MR的结果
     def LLM_MR(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
+        print(Exposure, Outcome, Exposure_id, Outcome_id)
 
         if self.model == 'MR':
             # 打开文件
@@ -519,6 +520,7 @@ class MRAgent:
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
             gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            # print(gpt_out)
             # 保存输出结果
             with open(os.path.join(snp_path, 'LLM_result.txt'), 'w') as file:
                 file.write(gpt_out)
@@ -790,6 +792,7 @@ class MRAgent:
         # 9.1 读取mr_run.csv
         global snp_path
         step9_path = os.path.join(self.path, 'mr_run.csv')
+        print(step9_path)
         df = pd.read_csv(step9_path)
         # print(df)
         # 读取Outcome_snp.csv
@@ -916,9 +919,9 @@ if __name__ == '__main__':
     # agent.run(step=[9])
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
-    agent = MRAgent(outcome='back pain', model='MR', LLM_model='qwen-max',
-                    AI_key='sk-afac4adcb4974723a26f4a05ee586dbc', gwas_token=mr_key, bidirectional=True,
+    agent = MRAgent(outcome='type 2 diabetes', model='MR', LLM_model='gpt-4o',
+                    AI_key='sk-UPEaoPDBCHU9sy6N04A56cB8683249628fB6CdE2C45fDa67', gwas_token=mr_key, bidirectional=True,
                     introduction=False, num=300)
-    agent.run(step=[9])
+    agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8])
 
     # TODO 输出时的暴露结局的顺序需要注意

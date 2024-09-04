@@ -215,30 +215,54 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
     
     # options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
     
-    p_value <- 5e-08
-    exposure_dat <- extract_instruments(outcomes = '{Exposure_id}',
-                                        p1=p_value,
-                                        clump=TRUE,
-                                        r2=0.001,
-                                        kb=5000,
-                                        # access_token = NULL
-    )
     
-    num_rows <- nrow(exposure_dat)
-    print(num_rows)
-    if (num_rows < 5) {{
-      p_value <- 5e-06
+    num_rows <- 0
+    tryCatch({{
+      p_value <- 5e-08
       exposure_dat <- extract_instruments(outcomes = '{Exposure_id}',
                                           p1=p_value,
                                           clump=TRUE,
                                           r2=0.001,
-                                          kb=5000,
-                                          # access_token = NULL
+                                          kb=5000
       )
+      num_rows <- nrow(exposure_dat)
+      print(num_rows)
+    }}, error = function(e) {{
+      message("First time gwas data error.", e$message)
+    }})
+    
+    if (num_rows < 11) {{
+      tryCatch({{
+        p_value <- 5e-06
+        exposure_dat <- extract_instruments(outcomes = '{Exposure_id}',
+                                            p1=p_value,
+                                            clump=TRUE,
+                                            r2=0.001,
+                                            kb=5000
+        )
         num_rows <- nrow(exposure_dat)
         print(num_rows)
+      }}, error = function(e) {{
+        message("Second time gwas data error. ", e$message)
+      }})
     }}
-
+    
+    if (num_rows < 11) {{
+      tryCatch({{
+        p_value <- 5e-05
+        exposure_dat <- extract_instruments(outcomes = '{Exposure_id}',
+                                            p1=p_value,
+                                            clump=TRUE,
+                                            r2=0.001,
+                                            kb=5000
+        )
+        num_rows <- nrow(exposure_dat)
+        print(num_rows)
+      }}, error = function(e) {{
+        message("Third time gwas data error.", e$message)
+      }})
+    }}
+    
     
     outcomeID="{Outcome_id}"
     #提取结局数据

@@ -22,6 +22,20 @@ def openAI_gpt(text, openAI_key, model_name='gpt-4-1106-preview'):
     return chat_response.choices[0].message.content
 
 
+def openAI_gpt_2(text, AI_key, model_name='gpt-4o'):
+    openai_api_key = AI_key
+    client = OpenAI(api_key=openai_api_key, base_url="https://api.gpt.ge/v1/")
+
+    chat_response = client.chat.completions.create(
+        model=model_name,
+        seed=42,
+        messages=[
+            {"role": "system", "content": "You are a helpful biomedical scientist."},
+            {"role": "user", "content": text}, ]
+    )
+
+    return chat_response.choices[0].message.content
+
 # 调用Ollama
 def ollama_chat(text, model_name='llama2'):
     response = ollama.chat(
@@ -118,13 +132,21 @@ def qwen_chat(text, AI_key, model_name='qwen-max-0403'):
 
 def llm_chat(text, model_name, AI_key=None):
     if 'gpt' in model_name:
-        return openAI_gpt(text, AI_key, model_name)
+        # return openAI_gpt(text, AI_key, model_name)
+        return openAI_gpt_2(text, AI_key, model_name)
     elif 'gemini' in model_name:
         return gemini_chat(text, model_name, AI_key)
     elif 'claude' in model_name:
-        return anthropic_chat(text, model_name, AI_key)
-        # return anthropic_chat_openai(text, AI_key, model_name)
+        # return anthropic_chat(text, model_name, AI_key)
+        return anthropic_chat_openai(text, AI_key, model_name)
     elif 'qwen-max' in model_name:
         return qwen_chat(text, AI_key, model_name)
     else:
         return ollama_chat(text, model_name)
+
+
+if __name__ == '__main__':
+    text = '鲁迅为什么暴打周树人？'
+    # out = llm_chat(text, 'qwen-max', 'sk-afac4adcb4974723a26f4a05ee586dbc')
+    out = llm_chat(text, 'gpt-4o', 'sk-UPEaoPDBCHU9sy6N04A56cB8683249628fB6CdE2C45fDa67')
+    print(out)
