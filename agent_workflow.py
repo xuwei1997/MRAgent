@@ -16,7 +16,6 @@ import time
 import sys
 from LLM import llm_chat
 import json
-import difflib
 import math
 
 

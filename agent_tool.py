@@ -1,4 +1,4 @@
-import json
+# import json
 from Bio import Entrez
 import requests
 from bs4 import BeautifulSoup
@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 # import subprocess
 import os
 import json
-import re
+# import re
 import time
 
 
