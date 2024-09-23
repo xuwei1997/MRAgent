@@ -2,20 +2,7 @@
 
 ## Abstract
 
-Mendelian randomization (MR) is a powerful analytical method that uses genetic variation to infer causal relationships
-between modifiable exposures and health outcomes. Despite the availability of standardized MR analysis pipelines, such
-as the TwoSampleMR R package, the process still requires significant intellectual input from professionals, including
-tasks such as Genome-Wide Association Study (GWAS) data selection, script writing, and result interpretation. With the
-advent of Large Language Models (LLMs) demonstrating human-level intelligence, LLM-based agents have shown potential in
-perceiving external information and executing actions, inspiring the development of automated MR analysis tools. Here,
-we propose the LLM-based automatic Mendelian randomization agent (MRAgent). MRAgent provides an automated analysis
-pipeline, replacing the manual components of traditional MR analysis. It autonomously scans and analyzes relevant
-literature, identifies potential exposures or outcomes related to diseases, and performs MR analysis to determine causal
-relationships, generating comprehensive reports. We designed experiments for automatic evaluation and human evaluation
-to compare the performance of different LLMs in operating MRAgent. Additionally, we provide a proof-of-concept case
-demonstrating the complete workflow. MRAgent offers clinicians and researchers a rapid and reliable tool for exploring
-and validating the causal factors associated with diseases, significantly reducing the time and expertise required for
-MR studies.
+Understanding causality in medical research is essential for developing effective interventions and diagnostic tools. Mendelian Randomization (MR) is a pivotal method for inferring causality through genetic data. However, MR analysis often requires pre-identification of exposure-outcome pairs from clinical experience or literature, which can be challenging to obtain. This poses difficulties for clinicians investigating causal factors of specific diseases. To address this, we introduce MRAgent, an innovative automated agent leveraging Large Language Models (LLMs) to enhance causal knowledge discovery in disease research. MRAgent autonomously scans scientific literature, discovers potential exposure-outcome pairs, and performs MR causal inference using extensive Genome-Wide Association Study (GWAS) data. We conducted both automated and human evaluations to compare different LLMs in operating MRAgent and provided a proof-of-concept case to demonstrate the complete workflow. MRAgent's capability to conduct large-scale causal analyses represents a significant advancement, equipping researchers and clinicians with a robust tool for exploring and validating causal relationships in complex diseases.
 
 ## MRAgent Architecture
 
@@ -101,6 +88,8 @@ class MRAgent(self, mode='O', exposure=None, outcome=None, AI_key=None, model='M
     - The LLM model used in the MRAgent.
 - gwas_token: str, optional (default=None)
     - The GWAS token for the OpenGWAS data.
+- opengwas_model: str, 'csv' or 'online' optional (default='csv')
+    - The model of the OpenGWAS data. 'csv' for the local OpenGWAS data. 'online' for the online OpenGWAS data.
 
 #### Methods:
 
@@ -162,6 +151,9 @@ class MRAgentOE(self, mode='OE', exposure=None, outcome=None, AI_key=None, model
     - The LLM model used in the MRAgent.
 - gwas_token: str, optional (default=None)
     - The GWAS token for the OpenGWAS data.
+- opengwas_model: str, 'csv' or 'online' optional (default='csv')
+    - The model of the OpenGWAS data. 'csv' for the local OpenGWAS data. 'online' for the online OpenGWAS data.
+
 
 #### Methods:
 
