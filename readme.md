@@ -186,8 +186,6 @@ agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
 6. step_9_test_out.py
 7. step_9_test_SimCSE.py
 
-> TODO
-
 ## Citation
 
 > TODO
