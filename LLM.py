@@ -132,13 +132,13 @@ def qwen_chat(text, AI_key, model_name='qwen-max-0403'):
 
 def llm_chat(text, model_name, AI_key=None):
     if 'gpt' in model_name:
-        # return openAI_gpt(text, AI_key, model_name)
-        return openAI_gpt_2(text, AI_key, model_name)
+        return openAI_gpt(text, AI_key, model_name)
+        # return openAI_gpt_2(text, AI_key, model_name)
     elif 'gemini' in model_name:
         return gemini_chat(text, model_name, AI_key)
     elif 'claude' in model_name:
-        # return anthropic_chat(text, model_name, AI_key)
-        return anthropic_chat_openai(text, AI_key, model_name)
+        return anthropic_chat(text, model_name, AI_key)
+        # return anthropic_chat_openai(text, AI_key, model_name)
     elif 'qwen-max' in model_name:
         return qwen_chat(text, AI_key, model_name)
     else:
@@ -148,5 +148,5 @@ def llm_chat(text, model_name, AI_key=None):
 if __name__ == '__main__':
     text = '鲁迅为什么暴打周树人？'
     # out = llm_chat(text, 'qwen-max', 'sk-afac4adcb4974723a26f4a05ee586dbc')
-    out = llm_chat(text, 'gpt-4o', 'sk-UPEaoPDBCHU9sy6N04A56cB8683249628fB6CdE2C45fDa67')
+    out = llm_chat(text, 'gpt-4o', '')
     print(out)

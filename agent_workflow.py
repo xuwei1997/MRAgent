@@ -918,9 +918,7 @@ if __name__ == '__main__':
     # agent.run(step=[9])
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
-    agent = MRAgent(outcome='type 2 diabetes', model='MR', LLM_model='gpt-4o',
+    agent = MRAgent(outcome='sepsis', model='MR', LLM_model='gpt-4o',
                     AI_key='', gwas_token=mr_key, bidirectional=True,
                     introduction=False, num=300)
     agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8])
-
-    # TODO 输出时的暴露结局的顺序需要注意
