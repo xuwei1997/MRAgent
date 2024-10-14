@@ -1,4 +1,4 @@
-# MRAgent: LLM-based Automatic Two-sample Mendelian Randomization Agent
+# MRAgent: An LLM-based Automated Agent for Causal Knowledge Discovery in Disease via Mendelian Randomization
 
 ## Abstract
 
