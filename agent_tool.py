@@ -100,6 +100,7 @@ def get_paper_details(paper_title):
         # print(results)
         id_list = results['IdList']
         papers = fetch_details(id_list)
+        print(papers)
         paper = papers['PubmedArticle'][0]
 
         try:
@@ -457,4 +458,6 @@ def get_synonyms(term, api_key):
 
 if __name__ == '__main__':
     # get_synonyms('BMI', 'd6382a8b-5ca8-493a-98ca-2b02fffcaeb5')
-    print(get_gwas_id('BMI'))
+    # print(get_gwas_id('BMI'))
+    a = get_paper_details('Mendelian randomization')
+    print(a)
