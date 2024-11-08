@@ -27,6 +27,7 @@ class MRAgentTest2(MRAgent):
         # print(df_oe)
         # 查看df_oe是否做了MR
         col = 'MRorNot_' + self.LLM_model
+        # TODO outcome_exposure_MRorNot已经修改
         df_oe[col] = df_oe.apply(lambda x: self.outcome_exposure_MRorNot(x['Outcome'], x['Exposure']), axis=1)
         # print(df_oe)
         # 以df为基础，将df_oe的MRorNot合并到df中， 'Outcome'和 'Exposure'  是主键

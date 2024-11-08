@@ -5,7 +5,7 @@ import os
 
 class MRAgentOE(MRAgent):
     def __init__(self, mode='OE', *args, **kwargs):
-        super().__init__(mode, *args, **kwargs)
+        super().__init__(mode, **kwargs)
 
     def step1(self):
         print(self.path)

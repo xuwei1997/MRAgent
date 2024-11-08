@@ -1,12 +1,11 @@
 import re
 import csv
 import pandas as pd
-from agent_tool import pubmed_crawler, check_keyword_in_opengwas, get_gwas_id, MRtool, get_paper_details, MRtool_MOE, \
-    get_synonyms
-import os
+from agent_tool import *
 
 from template_text import MRorNot_text, synonyms_text, gwas_id_text, pubmed_text, LLM_MR_template, LLM_MR_MOE_template, \
-    LLM_conclusion_template, LLM_Introduction_template, pubmed_text_obo
+    LLM_conclusion_template, LLM_Introduction_template, pubmed_text_obo, LLM_template_MR_effect_evaluation
+import os
 
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
@@ -22,7 +21,7 @@ import math
 class MRAgent:
     def __init__(self, mode='O', exposure=None, outcome=None, AI_key=None, model='MR', num=100, bidirectional=False,
                  synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', gwas_token=None,
-                 opengwas_mode='csv'):
+                 opengwas_mode='csv', mr_quality_evaluation=False, mr_quality_evaluation_key_item=None):
         # 加多一个参数，控制是否从csv中读取gwas列表'csv'或'online'
 
         self.exposure = exposure
@@ -54,6 +53,13 @@ class MRAgent:
         self.opengwas_mode = opengwas_mode
         if self.opengwas_mode == 'csv':
             self.opengwas_csv_init()
+
+        # MR效果评估
+        self.mr_quality_evaluation = mr_quality_evaluation
+        if mr_quality_evaluation_key_item == None:
+            self.mr_quality_evaluation_key_item = []
+        else:
+            self.mr_quality_evaluation_key_item = mr_quality_evaluation_key_item
 
     # 定义path并创建文件夹
     def define_path(self):
@@ -138,6 +144,7 @@ class MRAgent:
     # 查看outcome和exposure是否做了MR
     def outcome_exposure_MRorNot(self, outcome, exposure):
         # 休眠1秒
+        # global MR_evaluation
         time.sleep(1)
         # 从pubmed获取相关文章
         pub_text = '({Exposure}[Title/Abstract]) AND ({Outcome}[Title/Abstract]) AND (Mendelian randomization[Title/Abstract])'
@@ -152,13 +159,76 @@ class MRAgent:
         gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
         print(gpt_out)
 
-        # 若输出中包含"Exposure and Outcome were not subjected to Mendelian randomisation."，则说明没有Mendelian randomisation studies，返回True, 否则返回False
+        # 若输出中包含"Exposure and Outcome were not subjected to Mendelian randomisation."，则说明没有Mendelian randomisation studies
+        # 若已经进行了MR则GPT返回的是
         if "Exposure and Outcome were not subjected to Mendelian randomization." in gpt_out:
             print('No')
-            return 'No'
+            mark = 'No'
+            strobe_mr_chicklist = 'unavailable'
         else:
             print('Yes')
-            return 'Yes'
+            mark = 'Yes'
+            # mark = gpt_out
+
+            # MR效果评估
+            if self.mr_quality_evaluation == False:
+                strobe_mr_chicklist = 'unavailable'
+            else:
+                strobe_mr_chicklist = self.STROBE_MR(gpt_out)
+                if strobe_mr_chicklist == None:
+                    strobe_mr_chicklist = 'Full text unavailable'
+                else:
+                    # 按照self.mr_quality_evaluation_key_item list中的关键词进行评估
+                    # 以self.mr_quality_evaluation_key_item为key，从strobe_mr_chicklist提取所有的键值对
+                    MR_evaluation = {}
+                    for key in self.mr_quality_evaluation_key_item:
+                        MR_evaluation[key] = strobe_mr_chicklist.get(key, 'unavailable')
+                    # print(MR_evaluation)
+                    # print(MR_evaluation.values())
+
+                    # 若MR_evaluation存在‘No’，则mark为No
+                    if 'no' in MR_evaluation.values():
+                        print('no')
+                        mark = 'No'
+                    else:
+                        print('yes')
+
+        # 返回结果mark 和 MR_evaluation
+        return mark, gpt_out, strobe_mr_chicklist
+
+    # MR效果评估
+    def STROBE_MR(self, title):
+        paper_details = get_paper_details_pmc(title)
+        # 此处获取全文json
+        if paper_details == None:
+            return None
+        else:
+            # GPT
+            template = LLM_template_MR_effect_evaluation
+            t = template.format(paper_details=paper_details)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            # 正则表达式模式，匹配JSON对象
+            json_pattern = r'\{[^}]*\}'
+
+            # 使用正则表达式查找JSON对象
+            match = re.search(json_pattern, gpt_out, re.DOTALL)
+            # print(match)
+
+            if match:
+                json_str = match.group(0)
+                # print(json_str)
+                try:
+                    # 尝试将提取的字符串解析为JSON对象
+                    json_obj = json.loads(json_str)
+                    print(json_obj)
+                except json.JSONDecodeError as e:
+                    print("Error decoding JSON:", e)
+                    json_obj = None
+            else:
+                print("No JSON object found in the text.")
+                json_obj = None
+
+            return json_obj
 
     # 第一次查看是否做了MR
     def step2(self):
@@ -172,7 +242,8 @@ class MRAgent:
         df_oe = df[['Exposure', 'Outcome']].drop_duplicates()
         # print(df_oe)
         # 查看df_oe是否做了MR
-        df_oe['MRorNot'] = df_oe.apply(lambda x: self.outcome_exposure_MRorNot(x['Outcome'], x['Exposure']), axis=1)
+        df_oe[['MRorNot', 'MR_title', 'STROBE_MR_chicklist']] = df_oe.apply(
+            lambda x: self.outcome_exposure_MRorNot(x['Outcome'], x['Exposure']), axis=1).apply(pd.Series)
         # print(df_oe)
         # 以df为基础，将df_oe的MRorNot合并到df中， 'Outcome'和 'Exposure'  是主键
         df = pd.merge(df, df_oe, on=['Exposure', 'Outcome'], how='left')
@@ -454,7 +525,9 @@ class MRAgent:
         # 判断df_mr不为空
         if not df_mr.empty:
             # 7.2 查看outcome和exposure是否做了MR
-            df_mr['MRorNot'] = df_mr.apply(lambda x: self.outcome_exposure_MRorNot(x['Outcome'], x['Exposure']), axis=1)
+            # TODO outcome_exposure_MRorNot已经修改 需要判断是否正确
+            df_mr[['MRorNot', 'MR_title', 'STROBE_MR_chicklist']] = df_mr.apply(
+                lambda x: self.outcome_exposure_MRorNot(x['Outcome'], x['Exposure']), axis=1).apply(pd.Series)
 
             # 按Outcome和Exposure合并到df中，'Outcome'和 'Exposure'  是主键，替换MRorNot列
             df = pd.merge(df, df_mr[['Exposure', 'Outcome', 'MRorNot']], on=['Exposure', 'Outcome'], how='left',
@@ -918,7 +991,7 @@ if __name__ == '__main__':
     # agent.run(step=[9])
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
-    agent = MRAgent(outcome='sepsis', model='MR', LLM_model='gpt-4o',
-                    AI_key='', gwas_token=mr_key, bidirectional=True,
-                    introduction=False, num=300)
-    agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8])
+    agent = MRAgent(outcome='depression', AI_key='', model='MR',
+                    num=50, bidirectional=True, introduction=False, LLM_model='gpt-4o', gwas_token=mr_key,
+                    mr_quality_evaluation=True, mr_quality_evaluation_key_item=['4b', '4e', '20'])
+    agent.run(step=[1, 2])

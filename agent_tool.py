@@ -10,6 +10,7 @@ import os
 import json
 # import re
 import time
+import urllib
 
 
 # 爬虫爬取PubMed数据
@@ -202,6 +203,45 @@ def get_gwas_id(keyword):
     print(data)
 
     return data
+
+def get_paper_details_pmc(paper_title):
+    Entrez.email = 'xuwei_chn@foxmail.com'  # 请替换为你的邮箱
+
+    def search_pubmed(keyword, num_records, sort_order):
+        handle = Entrez.esearch(db='pubmed',
+                                sort=sort_order,
+                                retmax=str(num_records),
+                                retmode='xml',
+                                term=keyword)
+        results = Entrez.read(handle)
+        return results
+
+    def get_pcm_full_text(pmc_id):
+        # 直接访问接口网站获取json全文
+        # https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/[ID]/unicode
+        url = f"https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/{pmc_id}/unicode"
+        print(url)
+        response = urllib.request.urlopen(url)
+        full_text = response.read().decode('utf-8')
+        return full_text
+
+    def search_and_print_papers(keyword):
+        results = search_pubmed(keyword, 1, 'relevance')
+        id_list = results['IdList']
+        if len(id_list) == 0:
+            print("No papers found for the given query.")
+            return None
+        else:
+            paper_id = id_list[0]
+            full_text = get_pcm_full_text(paper_id)
+            if 'No record can be found for the input' in full_text:
+                print("No full text found for the given query.")
+                return None
+            else:
+                return full_text
+
+    return search_and_print_papers(paper_title)
+
 
 
 def MRtool(Exposure_id, Outcome_id, path, gwas_token):
@@ -457,7 +497,5 @@ def get_synonyms(term, api_key):
 
 
 if __name__ == '__main__':
-    # get_synonyms('BMI', 'd6382a8b-5ca8-493a-98ca-2b02fffcaeb5')
-    # print(get_gwas_id('BMI'))
     a = get_paper_details('Mendelian randomization')
     print(a)
