@@ -204,6 +204,7 @@ def get_gwas_id(keyword):
 
     return data
 
+
 def get_paper_details_pmc(paper_title):
     Entrez.email = 'xuwei_chn@foxmail.com'  # 请替换为你的邮箱
 
@@ -241,7 +242,6 @@ def get_paper_details_pmc(paper_title):
                 return full_text
 
     return search_and_print_papers(paper_title)
-
 
 
 def MRtool(Exposure_id, Outcome_id, path, gwas_token):
@@ -459,6 +459,220 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
     os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
 
 
+def MRtool_MRlap(Exposure_id, Outcome_id, path):
+    r_script = """
+# 安装并加载必要的包
+if (!requireNamespace("httr", quietly = TRUE)) {{
+  install.packages("httr")
+}}
+if (!requireNamespace("vcfR", quietly = TRUE)) {{
+  install.packages("vcfR")
+}}
+if (!requireNamespace("MRlap", quietly = TRUE)) {{
+  install.packages("MRlap")
+}}
+if (!requireNamespace("jsonlite", quietly = TRUE)) {{
+  install.packages("jsonlite")
+}}
+
+library(httr)
+library(vcfR)
+library(MRlap)
+library(jsonlite)
+
+# 定义下载函数
+download_vcf <- function(base_url, file_name, dest_dir = ".", min_size = 1 * 1024 * 1024) {{  # min_size 默认 1MB
+  # 提取文件标识符 (如 ukb-b-10807)
+  file_id <- gsub("(.*)\\\.vcf\\\.gz", "\\\\1", file_name)
+
+  # 构建完整的文件 URL (如 ukb-b-10807/ukb-b-10807.vcf.gz)
+  file_url <- paste0(base_url, file_id, "/", file_name)
+  print(paste("Attempting to download from:", file_url))
+
+  # 构建文件的本地保存路径
+  dest_file <- file.path(dest_dir, file_name)
+  print(paste("Saving to:", dest_file))
+
+  # 检查文件是否已经存在并且大小是否合适
+  if (file.exists(dest_file)) {{
+    file_info <- file.info(dest_file)
+    file_size <- file_info$size
+
+    # 如果文件存在且大小大于 1MB，则不重新下载
+    if (file_size >= min_size) {{
+      message(paste("File already exists and is larger than", round(min_size / (1024 * 1024), 2), "MB. Skipping download."))
+      return(TRUE)  # 文件已经存在且大小合适，跳过下载
+    }} else {{
+      message(paste("File exists but is too small (", round(file_size / (1024 * 1024), 2), "MB). Redownloading..."))
+    }}
+  }}
+
+  # 尝试直接下载文件，并捕获可能的错误
+  tryCatch({{
+    # 使用 curl 来下载并显示进度条
+    download.file(file_url, destfile = dest_file, method = "curl", mode = "wb")
+
+    # 下载完成后检查文件大小
+    file_info <- file.info(dest_file)
+    file_size <- file_info$size
+
+    # 如果文件小于 1MB，视为下载失败
+    if (file_size < min_size) {{
+      message(paste("File size is too small (", round(file_size / (1024 * 1024), 2), "MB). Deleting file:", dest_file))
+      file.remove(dest_file)  # 删除文件
+      return(FALSE)  # 返回 FALSE 表示下载失败
+    }} else {{
+      message(paste("Download complete:", dest_file, "File size:", round(file_size / (1024 * 1024), 2), "MB"))
+      return(TRUE)  # 返回 TRUE 表示下载成功
+    }}
+
+  }}, error = function(e) {{
+    # 如果出现错误（如 404），处理错误
+    if (grepl("404", e$message)) {{
+      message(paste("File not found (404):", file_name))
+    }} else {{
+      message(paste("Error downloading file:", file_name, "Error message:", e$message))
+    }}
+    return(FALSE)  # 返回 FALSE 表示下载失败
+  }})
+}}
+
+# 定义提取数据的函数
+extract_data_from_vcf <- function(vcf_file) {{
+  # 读取 VCF 文件
+  vcf <- read.vcfR(vcf_file)
+
+  # 查看样本列名，确保 sample_name 存在
+  sample_columns <- colnames(vcf@gt)
+  sample_name <- sample_columns[-1]  # 使用第一个样本列
+  print("Available sample columns in the VCF:")
+  print(sample_name)  # 打印使用的样本列名
+
+  # 提取头部信息，以便获取TotalControls和TotalCases
+  meta_info <- vcf@meta
+
+  # 查找TotalControls和TotalCases
+  total_controls <- as.numeric(gsub(".*TotalControls=([0-9]+).*", "\\\\1", grep("TotalControls", meta_info, value = TRUE)))
+  total_cases <- as.numeric(gsub(".*TotalCases=([0-9]+).*", "\\\\1", grep("TotalCases", meta_info, value = TRUE)))
+
+  # 打印调试信息
+  print("TotalControls (before NA check):")
+  print(total_controls)
+  print("TotalCases (before NA check):")
+  print(total_cases)
+
+  # 处理样本量 N
+  if (length(total_controls) == 0 || all(is.na(total_controls))) {{
+    total_controls <- 0  # 如果没有 TotalControls，设为 0
+  }}
+  if (length(total_cases) == 0 || all(is.na(total_cases))) {{
+    total_cases <- 0  # 如果没有 TotalCases，设为 0
+  }}
+
+  # 计算样本量 N
+  N <- total_controls + total_cases
+
+  print("TotalSamples (N):")
+  print(N)
+
+  if (N[2] == 0) {{
+    stop("TotalSamples (N) is 0. Check the VCF file for correct TotalControls and TotalCases.")
+  }}
+
+  # 提取固定字段（CHROM, POS, ID, REF, ALT）
+  fix_data <- as.data.frame(vcf@fix)
+
+  # 检查 POS 列是否可以正确转换为数值
+  print("Checking POS column:")
+  print(summary(fix_data$POS))  # 打印 POS 列的摘要信息
+  fix_data$POS <- as.numeric(fix_data$POS)
+  if (any(is.na(fix_data$POS))) {{
+    warning("Some positions (POS) could not be converted to numeric. Check the VCF file for inconsistencies.")
+  }}
+
+  # 提取基因型字段（ES, SE, LP, AF, ID）
+  gt_data <- as.data.frame(vcf@gt)
+
+  # 解析 GT 字段中的 ES, SE, LP, AF, ID
+  gt_parsed <- do.call(rbind, strsplit(gt_data[, sample_name], ":"))
+
+  # 检查 gt_parsed 的行数是否与 fix_data 的行数一致
+  if (nrow(gt_parsed) != nrow(fix_data)) {{
+    stop("The number of rows in the genotype data does not match the fixed fields. Check the VCF file for inconsistencies.")
+  }}
+
+  # 创建一个 data.frame，符合 MRlap 的要求
+  df <- data.frame(
+    chr = fix_data$CHROM,               # 染色体编号
+    pos = fix_data$POS,                 # 位置
+    rsid = fix_data$ID,                 # SNP 标识符
+    ref = fix_data$REF,                 # 参考等位基因
+    alt = fix_data$ALT,                 # 替代等位基因
+    beta = as.numeric(gt_parsed[, 1]),  # 效应量 (ES)
+    se = as.numeric(gt_parsed[, 2]),    # 标准误差 (SE)
+    zscore = as.numeric(gt_parsed[, 1]) / as.numeric(gt_parsed[, 2]),  # 计算 Z 分数
+    N = rep(N[2], nrow(fix_data))                               # 样本量 (TotalControls + TotalCases)
+  )
+
+  print(head(df))  # 查看生成的 data.frame
+  print("Data extraction complete.")
+
+  return(df)
+}}
+
+# 定义基础 URL 和文件名
+base_url <- "https://gwas.mrcieu.ac.uk/files/"
+exposure_file_name <- "{Exposure_id}.vcf.gz"
+outcome_file_name <- "{Outcome_id}.vcf.gz"
+
+# 定义 LD 和 HapMap3 文件路径
+ld_file <- "./eur_w_ld_chr"  # 替换为你的 LD 文件路径
+hm3_file <- "./w_hm3.snplist"  # 替换为你的 HapMap3 文件路径
+
+# 下载暴露数据文件
+if (download_vcf(base_url, exposure_file_name)) {{
+  # 下载成功或文件已存在，提取暴露数据
+  exposure_data <- extract_data_from_vcf(exposure_file_name)
+}} else {{
+  stop("Failed to download exposure data.")
+}}
+
+# 下载结果数据文件
+if (download_vcf(base_url, outcome_file_name)) {{
+  # 下载成功或文件已存在，提取结果数据
+  outcome_data <- extract_data_from_vcf(outcome_file_name)
+}} else {{
+  stop("Failed to download outcome data.")
+}}
+
+# 使用 MRlap 进行分析
+result <- MRlap(
+  exposure = exposure_data,
+  exposure_name = "Exposure",
+  outcome = outcome_data,
+  outcome_name = "Outcome",
+  ld = ld_file,
+  hm3 = hm3_file,
+  MR_threshold = 10e-7  # 设置 MR 阈值
+)
+
+# 查看结果
+print(result)
+
+# 保存结果
+# write.csv(result, file = "MRlap_results.csv", row.names = FALSE)
+result_json <- toJSON(result, pretty=TRUE)
+write(result_json, file = ".//{path}//MRlap_results.json")
+    """
+    r_script_run = r_script.format(Exposure_id=Exposure_id, Outcome_id=Outcome_id, path=path)
+    # print(r_script_run)
+
+    with open('test.R', 'w', encoding='utf-8') as f:
+        f.write(r_script_run)
+
+    os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
+
+
 def get_synonyms(term, api_key):
     try:
         # 获取cui
@@ -497,5 +711,7 @@ def get_synonyms(term, api_key):
 
 
 if __name__ == '__main__':
-    a = get_paper_details('Mendelian randomization')
-    print(a)
+    # a = get_paper_details_pmc(
+    #     'Association between gut microbiota and preeclampsia-eclampsia: a two-sample Mendelian randomization study')
+    # print(a)
+    MRtool_MRlap("ukb-b-10807", "ukb-d-M13_LOWBACKPAIN", "test1")
