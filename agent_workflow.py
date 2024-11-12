@@ -16,6 +16,7 @@ import sys
 from LLM import llm_chat
 import json
 import math
+from functools import cached_property
 
 
 class MRAgent:
@@ -51,8 +52,8 @@ class MRAgent:
         self.gwas_token = gwas_token
         # opengwas模式
         self.opengwas_mode = opengwas_mode
-        if self.opengwas_mode == 'csv':
-            self.opengwas_csv_init()
+        # # if self.opengwas_mode == 'csv':
+        #     self.opengwas_csv_init()
 
         # MR效果评估
         self.mr_quality_evaluation = mr_quality_evaluation
@@ -305,14 +306,17 @@ class MRAgent:
         out_path = os.path.join(self.path, 'Outcome_SNP.csv')
         df2.to_csv(out_path, index=False, encoding='utf-8')
 
-    # 查看OE是否在opengwas中
-    def opengwas_csv_init(self):
+    @cached_property
+    def opengwas_df(self):
         # 读取opengwas csv文件
         opengwas_path = 'opengwas.csv'
         df = pd.read_csv(opengwas_path)
         df['trait'] = df['trait'].astype(str)
-        self.opengwas_df = df
-        self.opengwas_list = df['trait'].tolist()
+        return df
+
+    @cached_property
+    def opengwas_list(self):
+        return self.opengwas_df['trait'].tolist()
 
     def check_keyword_in_opengwas_csv(self, keyword):
         # 从opengwas_df中查找keyword
@@ -577,6 +581,9 @@ class MRAgent:
 
     # 调用GPT解释MR的结果
     def LLM_MR(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
+        # TODO 此处是生成MR的LLM结果，把MRlap的加入
+        # TODO MRlap的样本改完从csv中读取
+
         print(Exposure, Outcome, Exposure_id, Outcome_id)
 
         if self.model == 'MR':
@@ -795,6 +802,7 @@ class MRAgent:
             # j = str(j)
             try:
                 print(i, j)
+                # TODO 此处要加入MRlap
                 if self.model == 'MR':
                     snp_path = os.path.join(path, 'MR_' + i + '_' + j)
                     if not os.path.exists(snp_path):
@@ -802,6 +810,7 @@ class MRAgent:
                     snp_path = snp_path.replace('\\', '//')
                     print(snp_path)
                     MRtool(i, j, snp_path, self.gwas_token)
+                    # TODO 此处要加入MRlap
                     # 调用GPT解释MR的结果
                     self.LLM_MR(Exposure=Exposure, Outcome=Outcome, Exposure_id=i, Outcome_id=j, snp_path=snp_path)
                 elif self.model == 'MR_MOE':
