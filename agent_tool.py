@@ -459,7 +459,7 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
     os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
 
 
-def MRtool_MRlap(Exposure_id, Outcome_id, path):
+def MRtool_MRlap(Exposure_id, Outcome_id, path, N_exposure, N_outcome):
     r_script = """
 # 安装并加载必要的包
 if (!requireNamespace("httr", quietly = TRUE)) {{
@@ -538,7 +538,7 @@ download_vcf <- function(base_url, file_name, dest_dir = ".", min_size = 1 * 102
 }}
 
 # 定义提取数据的函数
-extract_data_from_vcf <- function(vcf_file) {{
+extract_data_from_vcf <- function(vcf_file, N) {{
   # 读取 VCF 文件
   vcf <- read.vcfR(vcf_file)
 
@@ -547,38 +547,7 @@ extract_data_from_vcf <- function(vcf_file) {{
   sample_name <- sample_columns[-1]  # 使用第一个样本列
   print("Available sample columns in the VCF:")
   print(sample_name)  # 打印使用的样本列名
-
-  # 提取头部信息，以便获取TotalControls和TotalCases
-  meta_info <- vcf@meta
-
-  # 查找TotalControls和TotalCases
-  total_controls <- as.numeric(gsub(".*TotalControls=([0-9]+).*", "\\\\1", grep("TotalControls", meta_info, value = TRUE)))
-  total_cases <- as.numeric(gsub(".*TotalCases=([0-9]+).*", "\\\\1", grep("TotalCases", meta_info, value = TRUE)))
-
-  # 打印调试信息
-  print("TotalControls (before NA check):")
-  print(total_controls)
-  print("TotalCases (before NA check):")
-  print(total_cases)
-
-  # 处理样本量 N
-  if (length(total_controls) == 0 || all(is.na(total_controls))) {{
-    total_controls <- 0  # 如果没有 TotalControls，设为 0
-  }}
-  if (length(total_cases) == 0 || all(is.na(total_cases))) {{
-    total_cases <- 0  # 如果没有 TotalCases，设为 0
-  }}
-
-  # 计算样本量 N
-  N <- total_controls + total_cases
-
-  print("TotalSamples (N):")
-  print(N)
-
-  if (N[2] == 0) {{
-    stop("TotalSamples (N) is 0. Check the VCF file for correct TotalControls and TotalCases.")
-  }}
-
+  
   # 提取固定字段（CHROM, POS, ID, REF, ALT）
   fix_data <- as.data.frame(vcf@fix)
 
@@ -611,7 +580,7 @@ extract_data_from_vcf <- function(vcf_file) {{
     beta = as.numeric(gt_parsed[, 1]),  # 效应量 (ES)
     se = as.numeric(gt_parsed[, 2]),    # 标准误差 (SE)
     zscore = as.numeric(gt_parsed[, 1]) / as.numeric(gt_parsed[, 2]),  # 计算 Z 分数
-    N = rep(N[2], nrow(fix_data))                               # 样本量 (TotalControls + TotalCases)
+    N = N                               # 样本量 (TotalControls + TotalCases)
   )
 
   print(head(df))  # 查看生成的 data.frame
@@ -625,6 +594,10 @@ base_url <- "https://gwas.mrcieu.ac.uk/files/"
 exposure_file_name <- "{Exposure_id}.vcf.gz"
 outcome_file_name <- "{Outcome_id}.vcf.gz"
 
+# 定义暴露和结果数据的样本量
+N_exposure <- {N_exposure}  # 替换为你的暴露数据样本量
+N_outcome <- {N_outcome}  # 替换为你的结果数据样本量
+
 # 定义 LD 和 HapMap3 文件路径
 ld_file <- "./eur_w_ld_chr"  # 替换为你的 LD 文件路径
 hm3_file <- "./w_hm3.snplist"  # 替换为你的 HapMap3 文件路径
@@ -632,7 +605,7 @@ hm3_file <- "./w_hm3.snplist"  # 替换为你的 HapMap3 文件路径
 # 下载暴露数据文件
 if (download_vcf(base_url, exposure_file_name)) {{
   # 下载成功或文件已存在，提取暴露数据
-  exposure_data <- extract_data_from_vcf(exposure_file_name)
+  exposure_data <- extract_data_from_vcf(exposure_file_name, N_exposure)
 }} else {{
   stop("Failed to download exposure data.")
 }}
@@ -640,7 +613,7 @@ if (download_vcf(base_url, exposure_file_name)) {{
 # 下载结果数据文件
 if (download_vcf(base_url, outcome_file_name)) {{
   # 下载成功或文件已存在，提取结果数据
-  outcome_data <- extract_data_from_vcf(outcome_file_name)
+  outcome_data <- extract_data_from_vcf(outcome_file_name, N_outcome)
 }} else {{
   stop("Failed to download outcome data.")
 }}
@@ -664,7 +637,8 @@ print(result)
 result_json <- toJSON(result, pretty=TRUE)
 write(result_json, file = ".//{path}//MRlap_results.json")
     """
-    r_script_run = r_script.format(Exposure_id=Exposure_id, Outcome_id=Outcome_id, path=path)
+    r_script_run = r_script.format(Exposure_id=Exposure_id, Outcome_id=Outcome_id, path=path, N_exposure=N_exposure,
+                                   N_outcome=N_outcome)
     # print(r_script_run)
 
     with open('test.R', 'w', encoding='utf-8') as f:
@@ -714,4 +688,4 @@ if __name__ == '__main__':
     # a = get_paper_details_pmc(
     #     'Association between gut microbiota and preeclampsia-eclampsia: a two-sample Mendelian randomization study')
     # print(a)
-    MRtool_MRlap("ukb-b-10807", "ukb-d-M13_LOWBACKPAIN", "test1")
+    MRtool_MRlap("ukb-b-10807", "ukb-d-M13_LOWBACKPAIN", "test1", 423217, 361194)

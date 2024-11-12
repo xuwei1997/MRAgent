@@ -27,7 +27,7 @@ class MRAgentTest9(MRAgent):
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
-    def LLM_MR(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
+    def LLM_MR_result(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
 
         if self.model == 'MR':
             # 打开文件
@@ -116,8 +116,8 @@ class MRAgentTest9(MRAgent):
                     path = path.replace('\\', '//')
                     MRtool(Exposure_id, Outcome_id, path, self.gwas_token)
                 # 调用GPT解释MR的结果
-                self.LLM_MR(Exposure=Exposure, Outcome=Outcome, snp_path=path, Exposure_id=Exposure_id,
-                            Outcome_id=Outcome_id)
+                self.LLM_MR_result(Exposure=Exposure, Outcome=Outcome, snp_path=path, Exposure_id=Exposure_id,
+                                   Outcome_id=Outcome_id)
 
             elif self.model == 'MR_MOE':
                 # 判断是否已经生成了MR结果
@@ -125,8 +125,8 @@ class MRAgentTest9(MRAgent):
                     path = path.replace('\\', '//')
                     MRtool_MOE(Exposure_id, Outcome_id, path, self.gwas_token)
                 # 调用GPT解释MR的结果
-                self.LLM_MR(Exposure=Exposure, Outcome=Outcome, snp_path=path, Exposure_id=Exposure_id,
-                            Outcome_id=Outcome_id)
+                self.LLM_MR_result(Exposure=Exposure, Outcome=Outcome, snp_path=path, Exposure_id=Exposure_id,
+                                   Outcome_id=Outcome_id)
 
             # TODO: 创建对应不同LLM模型的文件夹
             # 进行LLM生成

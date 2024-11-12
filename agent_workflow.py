@@ -22,7 +22,7 @@ from functools import cached_property
 class MRAgent:
     def __init__(self, mode='O', exposure=None, outcome=None, AI_key=None, model='MR', num=100, bidirectional=False,
                  synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', gwas_token=None,
-                 opengwas_mode='csv', mr_quality_evaluation=False, mr_quality_evaluation_key_item=None):
+                 opengwas_mode='csv', mr_quality_evaluation=False, mr_quality_evaluation_key_item=None, mrlap=False):
         # 加多一个参数，控制是否从csv中读取gwas列表'csv'或'online'
 
         self.exposure = exposure
@@ -54,6 +54,7 @@ class MRAgent:
         self.opengwas_mode = opengwas_mode
         # # if self.opengwas_mode == 'csv':
         #     self.opengwas_csv_init()
+        self.mrlap = mrlap
 
         # MR效果评估
         self.mr_quality_evaluation = mr_quality_evaluation
@@ -580,10 +581,7 @@ class MRAgent:
         df_mr.to_csv(out_path, index=False, encoding='utf-8')
 
     # 调用GPT解释MR的结果
-    def LLM_MR(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
-        # TODO 此处是生成MR的LLM结果，把MRlap的加入
-        # TODO MRlap的样本改完从csv中读取
-
+    def LLM_MR_result(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
         print(Exposure, Outcome, Exposure_id, Outcome_id)
 
         if self.model == 'MR':
@@ -619,9 +617,20 @@ class MRAgent:
             # 保存输出结果
             with open(os.path.join(snp_path, 'LLM_result.txt'), 'w') as file:
                 file.write(gpt_out)
+        else:
+            gpt_out = None
 
-        # # 生成PDF####################################
-        # 创建
+        if self.mrlap:
+            mrlap_text = self.mrlap_result_text(snp_path)
+        else:
+            mrlap_text = None
+
+        self.LLM_MR_result_PDF(Exposure, Outcome, gpt_out, mrlap_text, snp_path)
+
+        return gpt_out
+
+    def LLM_MR_result_PDF(self, Exposure, Outcome, gpt_out, mrlap_text, snp_path):
+        # 创建PDF####################################
         doc = SimpleDocTemplate(os.path.join(snp_path, "Report.pdf"), pagesize=letter)
         # 设置样式
         styles = getSampleStyleSheet()
@@ -632,11 +641,9 @@ class MRAgent:
                           styles["Title"])
         story.append(title)
         story.append(Spacer(1, 12))
-
         styles["BodyText"].fontSize = 12  # 设置字体大小为 14
         styles["BodyText"].alignment = 4  # 设置文字居中 4
         styles["BodyText"].fontName = 'Times-Roman'  # 设置字体
-
         # 分析结果
         subtitle = Paragraph("Analysis of MR results", styles["Heading2"])
         story.append(subtitle)
@@ -645,9 +652,16 @@ class MRAgent:
             text = Paragraph(gpt_out_i, styles["BodyText"])
             # story.append(Spacer(1, 12))
             story.append(text)
+        # MRlap结果
+        if self.mrlap:
+            subtitle = Paragraph("Analysis of sample overlap", styles["Heading2"])
+            story.append(subtitle)
+            mrlap_text_list = mrlap_text.split('\n')
+            for mrlap_text_i in mrlap_text_list:
+                text = Paragraph(mrlap_text_i, styles["BodyText"])
+                story.append(text)
         # 构建 PDF
         doc.build(story)
-
         # 合并PDF和图片
         # 创建一个 PdfFileMerger 对象
         merger = PdfMerger()
@@ -663,7 +677,30 @@ class MRAgent:
         # 关闭合并器
         merger.close()
 
-        return gpt_out
+    def mrlap_result_text(self, snp_path):
+        # 读取json文件
+        with open(os.path.join(snp_path, 'MRlap_results.json'), 'r') as file:
+            mrlap_json = json.load(file)
+        print(mrlap_json)
+        # 提取"MRcorrection"中的  "corrected_effect" "corrected_effect_se" "corrected_effect_p" "test_difference" "p_difference"
+        MRcorrection = mrlap_json['MRcorrection']
+        corrected_effect = MRcorrection['corrected_effect'][0]
+        corrected_effect_se = MRcorrection['corrected_effect_se'][0]
+        corrected_effect_p = MRcorrection['corrected_effect_p'][0]
+        test_difference = MRcorrection['test_difference'][0]
+        p_difference = MRcorrection['p_difference'][0]
+        mrlap_text = f"""
+    In Mendelian Randomization (MR) analyses, sample overlap between the exposure and outcome datasets can introduce bias, potentially leading to inaccurate causal effect estimates. MRlap addresses this issue by using cross-trait Linkage Disequilibrium Score Regression (LDSC) to correct for biases arising from sample overlap, weak instruments, and winner’s curse. This correction provides a more robust estimate of the causal effect.
+    
+    In our analysis using MRlap, the corrected causal effect estimate ("corrected_effect") was {corrected_effect}, with a standard error ("corrected_effect_se") of {corrected_effect_se}. The p-value for the corrected causal effect ("corrected_effect_p") was {corrected_effect_p}. Given that the p-value is {'<0.05' if corrected_effect_p < 0.05 else '>0.05'}, the corrected effect is {'statistically significant' if corrected_effect_p < 0.05 else 'not statistically significant'}.
+    
+    Furthermore, the test statistic used to compare the observed and corrected effects ("test_difference") was {test_difference}, with a corresponding p-value ("p_difference") of {p_difference}. Since the p-value is {'<0.05' if p_difference < 0.05 else '>0.05'}, this indicates that {'the correction significantly impacted the effect estimate' if p_difference < 0.05 else 'the correction did not significantly impact the effect estimate'}.
+    
+    """
+        # 追加字段到文件LLM_result.txt中
+        with open(os.path.join(snp_path, 'LLM_result.txt'), 'a') as file:
+            file.write(mrlap_text)
+        return mrlap_text
 
     def LLM_Introduction(self, Exposure, Outcome, path):
         # GPT写引言####################################
@@ -710,6 +747,9 @@ class MRAgent:
                 # print(title)
                 details_list.append(get_paper_details(title))
 
+        self.LLM_Introduction_PDF(Exposure, Outcome, details_list, gpt_out, path)
+
+    def LLM_Introduction_PDF(self, Exposure, Outcome, details_list, gpt_out, path):
         # 创建PDF####################################
         doc = SimpleDocTemplate(os.path.join(path, "Introduction.pdf"), pagesize=letter)
         # 设置样式
@@ -720,11 +760,9 @@ class MRAgent:
         title = Paragraph("A Mendelian randomisation study about " + Exposure + " and " + Outcome, styles["Title"])
         story.append(title)
         story.append(Spacer(1, 12))
-
         styles["BodyText"].fontSize = 12  # 设置字体大小为 14
         styles["BodyText"].alignment = 4  # 设置文字居中 4
         styles["BodyText"].fontName = 'Times-Roman'  # 设置字体
-
         # 引言
         subtitle = Paragraph("Introduction", styles["Heading2"])
         story.append(subtitle)
@@ -733,7 +771,6 @@ class MRAgent:
         for gpt_out_i in gpt_out_list:
             text = Paragraph(gpt_out_i, styles["BodyText"])
             story.append(text)
-
         if self.mode == 'O' or self.mode == 'E':
             # 参考文献
             subtitle = Paragraph("Important References", styles["Heading2"])
@@ -796,13 +833,25 @@ class MRAgent:
         # 构建 PDF
         doc.build(story)
 
+    # MRLap
+    def step9_mrlap(self, Exposure_id, Outcome_id, path):
+        # 从self.opengwas_df中查找Exposure_id和Outcome_id的sample_size
+        Exposure_sample_size = self.opengwas_df[self.opengwas_df['id'] == Exposure_id]['sample_size'].values[0]
+        Outcome_sample_size = self.opengwas_df[self.opengwas_df['id'] == Outcome_id]['sample_size'].values[0]
+        # 运行
+        MRtool_MRlap(Exposure_id, Outcome_id, path, Exposure_sample_size, Outcome_sample_size)
+        # 获取MRlap的json结果
+        with open(os.path.join(path, 'MRlap_result.json'), 'r') as file:
+            MRlap_result = file.read()
+        # 转换为json
+        MRlap_result = json.loads(MRlap_result)
+
     def step9_run_mr_LLM(self, Exposure, Outcome, path, cartesian_product):
         for i, j in cartesian_product:
             # i = str(i)
             # j = str(j)
             try:
                 print(i, j)
-                # TODO 此处要加入MRlap
                 if self.model == 'MR':
                     snp_path = os.path.join(path, 'MR_' + i + '_' + j)
                     if not os.path.exists(snp_path):
@@ -810,9 +859,11 @@ class MRAgent:
                     snp_path = snp_path.replace('\\', '//')
                     print(snp_path)
                     MRtool(i, j, snp_path, self.gwas_token)
-                    # TODO 此处要加入MRlap
+                    if self.mrlap:
+                        self.step9_mrlap(i, j, snp_path)
                     # 调用GPT解释MR的结果
-                    self.LLM_MR(Exposure=Exposure, Outcome=Outcome, Exposure_id=i, Outcome_id=j, snp_path=snp_path)
+                    self.LLM_MR_result(Exposure=Exposure, Outcome=Outcome, Exposure_id=i, Outcome_id=j,
+                                       snp_path=snp_path)
                 elif self.model == 'MR_MOE':
                     snp_path = os.path.join(path, 'MR_MOE_' + i + '_' + j)
                     if not os.path.exists(snp_path):
@@ -820,7 +871,11 @@ class MRAgent:
                     snp_path = snp_path.replace('\\', '//')
                     print(snp_path)
                     MRtool_MOE(i, j, snp_path, self.gwas_token)
-                    self.LLM_MR(Exposure=Exposure, Outcome=Outcome, Exposure_id=i, Outcome_id=j, snp_path=snp_path)
+                    if self.mrlap:
+                        self.step9_mrlap(i, j, snp_path)
+                    self.LLM_MR_result(Exposure=Exposure, Outcome=Outcome, Exposure_id=i, Outcome_id=j,
+                                       snp_path=snp_path)
+
             except Exception as e:
                 print(' step9_run_mr_LLM Error')
                 print(e)
