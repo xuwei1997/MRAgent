@@ -12,6 +12,19 @@ import json
 import time
 import urllib
 
+def timer(func):
+    def func_wrapper(*args, **kwargs):
+        from time import time
+        time_start = time()
+        result = func(*args, **kwargs)
+        time_end = time()
+        time_spend = time_end - time_start
+        print('%s cost time: %.3f s' % (func.__name__, time_spend))
+        return result
+
+    return func_wrapper
+
+
 
 # 爬虫爬取PubMed数据
 def pubmed_crawler(keyword, num_records, sort_order, json_str=True):
@@ -243,7 +256,7 @@ def get_paper_details_pmc(paper_title):
 
     return search_and_print_papers(paper_title)
 
-
+@timer
 def MRtool(Exposure_id, Outcome_id, path, gwas_token):
     # 等待5s
     time.sleep(5)
@@ -358,7 +371,7 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
 
     os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
 
-
+@timer
 def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
     # 等待5s
     time.sleep(5)
@@ -458,7 +471,7 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
 
     os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
 
-
+@timer
 def MRtool_MRlap(Exposure_id, Outcome_id, path, N_exposure, N_outcome):
     r_script = """
 # 安装并加载必要的包
