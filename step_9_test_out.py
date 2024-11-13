@@ -153,6 +153,7 @@ class MRAgentTest9(MRAgent):
                 os.makedirs(oe_path)
 
             # 运行MR
+            # 此处若是已经生成了MR结果，则不再生成
             self.step9_run_mr_test(Exposure=Exposure, Outcome=Outcome, path=oe_path, Exposure_id=Exposure_id,
                                    Outcome_id=Outcome_id)
 
