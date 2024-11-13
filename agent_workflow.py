@@ -17,6 +17,7 @@ from LLM import llm_chat
 import json
 import math
 from functools import cached_property
+from agent_tool import timer
 
 
 class MRAgent:
@@ -76,6 +77,7 @@ class MRAgent:
             os.makedirs(self.path)
 
     # outcome与什么做了相关性但是没有做因果性
+    @timer
     def step1(self):
         # 1.1 从pubmed获取相关文章
         pubmed_out = pubmed_crawler(self.outcome, self.num, 'most recent', json_str=False)
@@ -199,6 +201,7 @@ class MRAgent:
         return mark, gpt_out, strobe_mr_chicklist
 
     # MR效果评估
+    @timer
     def STROBE_MR(self, title):
         paper_details = get_paper_details_pmc(title)
         # 此处获取全文json
@@ -233,6 +236,7 @@ class MRAgent:
             return json_obj
 
     # 第一次查看是否做了MR
+    @timer
     def step2(self):
         # 2.1 读取step1的结果
         step1_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
@@ -256,6 +260,7 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     #  同义词扩充。提取出所有O和E，新建2表，去重，然后GPT寻找同义词
+    @timer
     def step3(self):
         # 3.1 读取step2的结果
         step2_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
@@ -335,6 +340,7 @@ class MRAgent:
         # 字符串匹配,不区分大小写
         return any(keyword.lower() in s.lower() for s in self.opengwas_list)
 
+    @timer
     def step4(self):
         # 4.1 读取step3的结果
         step3_path = os.path.join(self.path, 'Outcome_SNP.csv')
@@ -422,6 +428,7 @@ class MRAgent:
         return gpt_out
 
     # 有了GWAS数据的OE获取所有相关gwas_id
+    @timer
     def step5(self):
         # 5.1 读取step4的结果
         step5_path = os.path.join(self.path, 'Outcome_SNP.csv')
@@ -445,6 +452,7 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     # 求笛卡尔积，获取所有outcome和exposure可能的组合
+    @timer
     def step6(self):
         # 6.1 读取Exposure_and_Outcome.csv
         step1_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
@@ -510,6 +518,7 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     # Exposure_and_Outcome中，opengwas为TRUE的，并MRorNot这里为Nan的，查看是否做了MR
+    @timer
     def step7(self):
         # 7.1 读取Exposure_and_Outcome.csv
         step1_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
@@ -548,6 +557,7 @@ class MRAgent:
         df.to_csv(out_path, index=False, encoding='utf-8')
 
     # 最终选出Outcome和Exposure进行MR
+    @timer
     def step8(self):
         # 8.1 读取Exposure_and_Outcome.csv
         step1_path = os.path.join(self.path, 'Exposure_and_Outcome.csv')
@@ -581,6 +591,7 @@ class MRAgent:
         df_mr.to_csv(out_path, index=False, encoding='utf-8')
 
     # 调用GPT解释MR的结果
+    @timer
     def LLM_MR_result(self, Exposure, Outcome, Exposure_id, Outcome_id, snp_path):
         print(Exposure, Outcome, Exposure_id, Outcome_id)
 
@@ -677,6 +688,7 @@ class MRAgent:
         # 关闭合并器
         merger.close()
 
+    @timer
     def mrlap_result_text(self, snp_path):
         # 读取json文件
         with open(os.path.join(snp_path, 'MRlap_results.json'), 'r') as file:
@@ -834,17 +846,13 @@ class MRAgent:
         doc.build(story)
 
     # MRLap
+    @timer
     def step9_mrlap(self, Exposure_id, Outcome_id, path):
         # 从self.opengwas_df中查找Exposure_id和Outcome_id的sample_size
         Exposure_sample_size = self.opengwas_df[self.opengwas_df['id'] == Exposure_id]['sample_size'].values[0]
         Outcome_sample_size = self.opengwas_df[self.opengwas_df['id'] == Outcome_id]['sample_size'].values[0]
         # 运行
         MRtool_MRlap(Exposure_id, Outcome_id, path, Exposure_sample_size, Outcome_sample_size)
-        # 获取MRlap的json结果
-        with open(os.path.join(path, 'MRlap_result.json'), 'r') as file:
-            MRlap_result = file.read()
-        # 转换为json
-        MRlap_result = json.loads(MRlap_result)
 
     def step9_run_mr_LLM(self, Exposure, Outcome, path, cartesian_product):
         for i, j in cartesian_product:
@@ -877,7 +885,7 @@ class MRAgent:
                                        snp_path=snp_path)
 
             except Exception as e:
-                print(' step9_run_mr_LLM Error')
+                print('Step9_run_mr_LLM Error')
                 print(e)
 
         # 总结各个SNP的结果，生成一个综合结果和PDF
@@ -913,6 +921,7 @@ class MRAgent:
             print('LLM_conclusion Error')
 
     # 确定cartesian_product的poppulation是否一致
+    @timer
     def step9_gwas_poppulation(self, cartesian_product):
         out_cartesian_product = []
         for i, j in cartesian_product:
@@ -924,6 +933,7 @@ class MRAgent:
         return out_cartesian_product
 
     # 运行MR
+    @timer
     def step9(self):
         # 9.1 读取mr_run.csv
         global snp_path
@@ -1045,7 +1055,7 @@ class MRAgent:
 
 
 if __name__ == '__main__':
-    mr_key = ''
+    from key import mr_key, AI_key
 
     # agent = MRAgent(outcome='back pain', AI_key='',
     #                 model='MR', LLM_model='gemini-pro')
@@ -1055,7 +1065,8 @@ if __name__ == '__main__':
     # agent.run(step=[9])
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
-    agent = MRAgent(outcome='depression', AI_key='', model='MR',
+    agent = MRAgent(outcome='depression', AI_key=AI_key, model='MR',
                     num=50, bidirectional=True, introduction=False, LLM_model='gpt-4o', gwas_token=mr_key,
-                    mr_quality_evaluation=True, mr_quality_evaluation_key_item=['4b', '4e', '20'])
-    agent.run(step=[1, 2])
+                    mr_quality_evaluation=True, mr_quality_evaluation_key_item=['4b', '4e', '6e', '10d'], mrlap=True)
+    # agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8])
+    agent.run(step=[9])

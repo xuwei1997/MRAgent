@@ -639,7 +639,7 @@ result <- MRlap(
   outcome_name = "Outcome",
   ld = ld_file,
   hm3 = hm3_file,
-  MR_threshold = 10e-7  # 设置 MR 阈值
+  MR_threshold = 5e-6  # 设置 MR 阈值
 )
 
 # 查看结果
