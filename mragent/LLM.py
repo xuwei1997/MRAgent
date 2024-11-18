@@ -85,7 +85,7 @@ def qwen_chat(text, AI_key, model_name='qwen-max-0403'):
 
 def llm_chat(text, model_name, AI_key=None, base_url=None):
     if 'gpt' in model_name:
-        return openAI_gpt(text, AI_key, model_name)
+        return openAI_gpt(text, AI_key, model_name, base_url)
     elif 'gemini' in model_name:
         return gemini_chat(text, model_name, AI_key)
     elif 'claude' in model_name:
