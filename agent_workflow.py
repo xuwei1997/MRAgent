@@ -22,7 +22,7 @@ from agent_tool import timer
 
 class MRAgent:
     def __init__(self, mode='O', exposure=None, outcome=None, AI_key=None, model='MR', num=100, bidirectional=False,
-                 synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', gwas_token=None,
+                 synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', base_url=None, gwas_token=None,
                  opengwas_mode='csv', mr_quality_evaluation=False, mr_quality_evaluation_key_item=None, mrlap=False):
         # 加多一个参数，控制是否从csv中读取gwas列表'csv'或'online'
 
@@ -45,6 +45,9 @@ class MRAgent:
         # OE模式已开新类
         # LLM模型选择
         self.LLM_model = LLM_model
+        # base_url
+        self.base_url = base_url
+
         # 定义path
         self.define_path()
         # 从pubmed获取文章数量
@@ -101,7 +104,7 @@ class MRAgent:
             # 1.3 LLM判断
             try:
                 t = template.format(Outcome=self.outcome, title=title, abstract=abstract)
-                gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+                gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
                 print('gpt_out:')
                 print(gpt_out)
                 # 利用正则表达式提取结果中的json list
@@ -160,7 +163,7 @@ class MRAgent:
         template = MRorNot_text
         t = template.format(Exposure=exposure, Outcome=outcome, pubmed_out=pubmed_out)
 
-        gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+        gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
         print(gpt_out)
 
         # 若输出中包含"Exposure and Outcome were not subjected to Mendelian randomisation."，则说明没有Mendelian randomisation studies
@@ -211,7 +214,7 @@ class MRAgent:
             # GPT
             template = LLM_template_MR_effect_evaluation
             t = template.format(paper_details=paper_details)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
             # 正则表达式模式，匹配JSON对象
             json_pattern = r'\{[^}]*\}'
 
@@ -412,7 +415,7 @@ class MRAgent:
         # get_gwas_id改为csv模式
         template = gwas_id_text
         t = template.format(keyword=keyword, json_list=json_list)
-        gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+        gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
         print(gpt_out)
         # 运用正则表达式提取结果中的gwas_id list
         if '[' in gpt_out and ']' in gpt_out:
@@ -539,7 +542,6 @@ class MRAgent:
         # 判断df_mr不为空
         if not df_mr.empty:
             # 7.2 查看outcome和exposure是否做了MR
-            # TODO outcome_exposure_MRorNot已经修改 需要判断是否正确
             df_mr[['MRorNot', 'MR_title', 'STROBE_MR_chicklist']] = df_mr.apply(
                 lambda x: self.outcome_exposure_MRorNot(x['Outcome'], x['Exposure']), axis=1).apply(pd.Series)
 
@@ -607,7 +609,7 @@ class MRAgent:
             template = LLM_MR_template
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
             # print(gpt_out)
             # 保存输出结果
             with open(os.path.join(snp_path, 'LLM_result.txt'), 'w') as file:
@@ -624,7 +626,7 @@ class MRAgent:
             template = LLM_MR_MOE_template
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
             # 保存输出结果
             with open(os.path.join(snp_path, 'LLM_result.txt'), 'w') as file:
                 file.write(gpt_out)
@@ -735,7 +737,7 @@ class MRAgent:
         template = LLM_Introduction_template
         t = template.format(Outcome=Outcome, Exposure=Exposure, Outcome_pubmed=Outcome_pubmed,
                             Exposure_pubmed=Exposure_pubmed, Exposure_Outcome_pubmed=Exposure_Outcome_pubmed)
-        gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+        gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
         # 保存输出结果
         with open(os.path.join(path, 'LLM_Introduction.txt'), 'w', encoding='utf-8') as file:
             file.write(gpt_out)
@@ -814,7 +816,7 @@ class MRAgent:
             LLM_result_all = file.read()
         template = LLM_conclusion_template
         t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=LLM_result_all)
-        gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+        gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
         # 保存输出结果
         with open(os.path.join(path, self.model + '_LLM_result_all_conclusion.txt'), 'w', encoding='utf-8') as file:
             file.write(gpt_out)
@@ -1066,7 +1068,8 @@ if __name__ == '__main__':
 
     # gpt-4-1106-preview gpt-4-turbo-preview gpt-3.5-turbo
     agent = MRAgent(outcome='depression', AI_key=AI_key, model='MR',
-                    num=50, bidirectional=True, introduction=False, LLM_model='gpt-4o', gwas_token=mr_key,
+                    num=50, bidirectional=True, introduction=False, LLM_model='gpt-4o',
+                    base_url="https://api.gpt.ge/v1/", gwas_token=mr_key,
                     mr_quality_evaluation=True, mr_quality_evaluation_key_item=['4b', '4e', '6e', '10d'], mrlap=True)
     # agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8])
     agent.run(step=[9])
