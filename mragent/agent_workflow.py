@@ -22,7 +22,7 @@ from .agent_tool import timer
 
 class MRAgent:
     def __init__(self, mode='O', exposure=None, outcome=None, AI_key=None, model='MR', num=100, bidirectional=False,
-                 synonyms=True, introduction=True, LLM_model='gpt-4-turbo-preview', base_url=None, gwas_token=None,
+                 synonyms=True, introduction=True, LLM_model='gpt-4o', base_url=None, gwas_token=None,
                  opengwas_mode='csv', mr_quality_evaluation=False, mr_quality_evaluation_key_item=None, mrlap=False):
         # 加多一个参数，控制是否从csv中读取gwas列表'csv'或'online'
 

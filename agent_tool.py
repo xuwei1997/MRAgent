@@ -262,6 +262,15 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
     time.sleep(5)
 
     r_script = """
+    # 安装并加载必要的包
+    if (!requireNamespace("TwoSampleMR", quietly = TRUE)) {{
+      install.packages("TwoSampleMR")
+    }}
+    if (!requireNamespace("ieugwasr", quietly = TRUE)) {{
+      install.packages("ieugwasr")
+    }}
+        
+
     #引用包
     Sys.setenv(OPENGWAS_JWT="{gwas_token}")
     library(TwoSampleMR)

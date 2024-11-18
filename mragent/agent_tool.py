@@ -1,12 +1,17 @@
+# import json
 from Bio import Entrez
 import requests
 from bs4 import BeautifulSoup
-
+# import pandas as pd
+# # from rpy2.robjects import r
+# import time
+# import subprocess
 import os
 import json
-
+# import re
 import time
 import urllib
+
 
 def timer(func):
     def func_wrapper(*args, **kwargs):
@@ -19,7 +24,6 @@ def timer(func):
         return result
 
     return func_wrapper
-
 
 
 # 爬虫爬取PubMed数据
@@ -252,20 +256,30 @@ def get_paper_details_pmc(paper_title):
 
     return search_and_print_papers(paper_title)
 
+
 @timer
 def MRtool(Exposure_id, Outcome_id, path, gwas_token):
     # 等待5s
     time.sleep(5)
 
     r_script = """
+    # 安装并加载必要的包
+    if (!requireNamespace("TwoSampleMR", quietly = TRUE)) {{
+      install.packages("TwoSampleMR")
+    }}
+    if (!requireNamespace("ieugwasr", quietly = TRUE)) {{
+      install.packages("ieugwasr")
+    }}
+
+
     #引用包
     Sys.setenv(OPENGWAS_JWT="{gwas_token}")
     library(TwoSampleMR)
     library(ieugwasr)
-    
+
     # options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
-    
-    
+
+
     num_rows <- 0
     tryCatch({{
       p_value <- 5e-08
@@ -280,7 +294,7 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
     }}, error = function(e) {{
       message("First time gwas data error.", e$message)
     }})
-    
+
     if (num_rows < 11) {{
       tryCatch({{
         p_value <- 5e-06
@@ -296,7 +310,7 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
         message("Second time gwas data error. ", e$message)
       }})
     }}
-    
+
     if (num_rows < 11) {{
       tryCatch({{
         p_value <- 5e-05
@@ -312,8 +326,8 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
         message("Third time gwas data error.", e$message)
       }})
     }}
-    
-    
+
+
     outcomeID="{Outcome_id}"
     #提取结局数据
     outcome_dat <- extract_outcome_data(snps=exposure_dat$SNP, outcomes=outcomeID)
@@ -367,6 +381,7 @@ def MRtool(Exposure_id, Outcome_id, path, gwas_token):
 
     os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
 
+
 @timer
 def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
     # 等待5s
@@ -378,9 +393,9 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
     library(TwoSampleMR)
     library(ieugwasr)
     library(dplyr)
-    
+
     # options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
-    
+
     p_value <- 5e-08
     exposure_dat <- extract_instruments(outcomes = '{Exposure_id}',
                                         p1=p_value,
@@ -389,7 +404,7 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
                                         kb=5000,
                                         # access_token = NULL
     )
-    
+
     num_rows <- nrow(exposure_dat)
     print(num_rows)
     if (num_rows < 5) {{
@@ -404,57 +419,57 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
         num_rows <- nrow(exposure_dat)
         print(num_rows)
     }}
-    
+
     outcomeID="{Outcome_id}"
     #提取结局数据
     outcome_dat <- extract_outcome_data(snps=exposure_dat$SNP, outcomes=outcomeID)
     dat <- harmonise_data(exposure_dat, outcome_dat)
     outTab=dat[dat$mr_keep=="TRUE",]
     write.csv(outTab, file=".//{path}//table.SNP.csv", row.names=F)
-    
-    
+
+
     # Apply all MR methods
     r <- mr_wrapper(dat)
-    
+
     # Load the rf object containing the trained models
     load("rf.rdata")
     # Update the results with mixture of experts
     r <- mr_moe(r, rf)
-    
+
     # Now you can view the estimates, and see that they have
     # been sorted in order from most likely to least likely to
     # be accurate, based on MOE prediction
     r[[1]]$estimates
     head(r)
-    
+
     # save the results csv
     write.csv(r[[1]]$estimates, file=".//{path}//MR.MRresult.csv", row.names=F)
     write.csv(r[[1]]$heterogeneity, file=".//{path}//MR.heterogeneity.csv", row.names=F)
-    
+
     #异质性分析
     heterTab=mr_heterogeneity(dat)
     write.csv(heterTab, file=".//{path}//MR.table.heterogeneity.csv", row.names=F)
-    
+
     #多效性检验
     pleioTab=mr_pleiotropy_test(dat)
     write.csv(pleioTab, file=".//{path}//MR.table.pleiotropy.csv", row.names=F)
-    
+
     # #绘制散点图
     pdf(file=".//{path}//pic.scatter_plot.pdf", width=7.5, height=7)
     mr_scatter_plot(r[[1]]$estimates, dat)
     dev.off()
-    
+
     #森林图
     res_single=mr_singlesnp(dat)      #得到每个工具变量对结局的影响
     pdf(file=".//{path}//pic.forest.pdf", width=7, height=5.5)
     mr_forest_plot(res_single)
     dev.off()
-    
+
     #漏斗图
     pdf(file=".//{path}//pic.funnel_plot.pdf", width=7, height=6.5)
     mr_funnel_plot(singlesnp_results = res_single)
     dev.off()
-    
+
     #留一法敏感性分析
     pdf(file=".//{path}//pic.leaveoneout.pdf", width=7, height=5.5)
     mr_leaveoneout_plot(leaveoneout_results = mr_leaveoneout(dat))
@@ -466,6 +481,7 @@ def MRtool_MOE(Exposure_id, Outcome_id, path, gwas_token):
         f.write(r_script_run)
 
     os.system('R --slave --no-save --no-restore --no-site-file --no-environ -f  test.R --args')
+
 
 @timer
 def MRtool_MRlap(Exposure_id, Outcome_id, path, N_exposure, N_outcome):
@@ -556,7 +572,7 @@ extract_data_from_vcf <- function(vcf_file, N) {{
   sample_name <- sample_columns[-1]  # 使用第一个样本列
   print("Available sample columns in the VCF:")
   print(sample_name)  # 打印使用的样本列名
-  
+
   # 提取固定字段（CHROM, POS, ID, REF, ALT）
   fix_data <- as.data.frame(vcf@fix)
 
@@ -691,3 +707,10 @@ def get_synonyms(term, api_key):
     print(synonyms)
 
     return synonyms
+
+
+if __name__ == '__main__':
+    # a = get_paper_details_pmc(
+    #     'Association between gut microbiota and preeclampsia-eclampsia: a two-sample Mendelian randomization study')
+    # print(a)
+    MRtool_MRlap("ukb-b-10807", "ukb-d-M13_LOWBACKPAIN", "test1", 423217, 361194)
