@@ -1,8 +1,15 @@
-from agent_workflow import MRAgent
+# from agent_workflow import MRAgent
+# from agent_tool import pubmed_crawler
+# from LLM import llm_chat
+
 import os
-from agent_tool import pubmed_crawler
-from LLM import llm_chat
-from template_text import pubmed_text_obo
+
+from mragent import MRAgent
+from mragent.agent_tool import pubmed_crawler
+from mragent.LLM import llm_chat
+
+# from template_text import pubmed_text_obo
+from mragent.template_text import pubmed_text_obo
 import json
 import pandas as pd
 

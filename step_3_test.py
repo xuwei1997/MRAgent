@@ -1,8 +1,10 @@
 # 第三步测试
-from agent_workflow import MRAgent
+# from agent_workflow import MRAgent
+from mragent import MRAgent
 import os
 import pandas as pd
-from agent_tool import get_synonyms
+# from agent_tool import get_synonyms
+from mragent.agent_tool import get_synonyms
 
 class MRAgentTest3(MRAgent):
     def __init__(self, AI_key=None, LLM_model=None):

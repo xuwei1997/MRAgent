@@ -1,5 +1,6 @@
 # 第二步测试 查看outcome和exposure是否做了MR
-from agent_workflow import MRAgent
+# from agent_workflow import MRAgent
+from mragent import MRAgent
 import pandas as pd
 import os
 

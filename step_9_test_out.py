@@ -1,15 +1,21 @@
-from agent_workflow import MRAgent
+# from agent_workflow import MRAgent
+from mragent import MRAgent
 import os
 import pandas as pd
-from agent_tool import MRtool, MRtool_MOE
-from template_text import MRorNot_text, synonyms_text, gwas_id_text, pubmed_text, LLM_MR_template, LLM_MR_MOE_template, \
+# from agent_tool import MRtool, MRtool_MOE
+from mragent.agent_tool import MRtool, MRtool_MOE
+# from template_text import MRorNot_text, synonyms_text, gwas_id_text, pubmed_text, LLM_MR_template, LLM_MR_MOE_template, \
+#     LLM_conclusion_template, LLM_Introduction_template, pubmed_text_obo
+
+from mragent.template_text import MRorNot_text, synonyms_text, gwas_id_text, pubmed_text, LLM_MR_template, LLM_MR_MOE_template, \
     LLM_conclusion_template, LLM_Introduction_template, pubmed_text_obo
 
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
 from PyPDF2 import PdfMerger
-from LLM import llm_chat
+# from LLM import llm_chat
+from mragent.LLM import llm_chat
 
 from key import mr_key
 
