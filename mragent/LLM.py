@@ -96,4 +96,5 @@ def llm_chat(text, model_name, AI_key=None, base_url=None):
         else:
             return ollama_chat(text, model_name)
     else:
+        print('base_url:', base_url)
         return openAI_gpt(text, AI_key, model_name, base_url)
