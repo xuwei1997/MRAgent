@@ -176,12 +176,13 @@ Please read and understand the results in the table and generate a paragraph des
 {pleiotropy}
 """
 
-from agent_workflow import MRAgent
+# from agent_workflow import MRAgent
+from mragent import MRAgent
 # from template_text import LLM_MR_template, LLM_MR_MOE_template
 import os
 import pandas as pd
-from agent_tool import MRtool, MRtool_MOE
-from LLM import llm_chat
+from mragent.agent_tool import MRtool, MRtool_MOE
+from mragent.LLM import llm_chat
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
@@ -189,7 +190,8 @@ from PyPDF2 import PdfMerger
 
 
 class MRAgentTest9Prompt(MRAgent):
-    def __init__(self, prompt_template, prompt_name, AI_key=None, LLM_model=None, model='MR', gwas_token=None,
+    def __init__(self, prompt_template, prompt_name, AI_key=None, LLM_model=None,
+                 base_url="https://api.gpt.ge/v1/", model='MR', gwas_token=None,
                  test_csv_path=None):
         self.LLM_model = LLM_model
         self.AI_key = AI_key
@@ -199,6 +201,7 @@ class MRAgentTest9Prompt(MRAgent):
         self.prompt_template = prompt_template
         self.test_csv_path = test_csv_path
         self.prompt_name = prompt_name
+        self.base_url = base_url
 
     def define_path(self):
         self.path = os.path.join('MRAgentTest9-Prompt')
@@ -251,36 +254,36 @@ class MRAgentTest9Prompt(MRAgent):
 
         if self.model == 'MR':
             # 打开文件
-            with open(os.path.join(snp_path, 'table.MRresult.csv'), 'r') as file:
+            with open(os.path.join(snp_path, 'table.MRresult.csv'), 'r', encoding='utf-8') as file:
                 MRresult = file.read()
-            with open(os.path.join(snp_path, 'table.heterogeneity.csv'), 'r') as file:
+            with open(os.path.join(snp_path, 'table.heterogeneity.csv'), 'r', encoding='utf-8') as file:
                 heterogeneity = file.read()
-            with open(os.path.join(snp_path, 'table.pleiotropy.csv'), 'r') as file:
+            with open(os.path.join(snp_path, 'table.pleiotropy.csv'), 'r', encoding='utf-8') as file:
                 pleiotropy = file.read()
 
             template = self.prompt_template
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
             # print(gpt_out)
             # 保存输出结果
-            with open(os.path.join(snp_path, 'LLM_result.txt'), 'w') as file:
+            with open(os.path.join(snp_path, 'LLM_result.txt'), 'w', encoding='utf-8') as file:
                 file.write(gpt_out)
         elif self.model == 'MR_MOE':
             # 打开文件
-            with open(os.path.join(snp_path, 'MR.MRresult.csv'), 'r') as file:
+            with open(os.path.join(snp_path, 'MR.MRresult.csv'), 'r', encoding='utf-8') as file:
                 MRresult = file.read()
-            with open(os.path.join(snp_path, 'MR.heterogeneity.csv'), 'r') as file:
+            with open(os.path.join(snp_path, 'MR.heterogeneity.csv'), 'r', encoding='utf-8') as file:
                 heterogeneity = file.read()
-            with open(os.path.join(snp_path, 'MR.table.pleiotropy.csv'), 'r') as file:
+            with open(os.path.join(snp_path, 'MR.table.pleiotropy.csv'), 'r', encoding='utf-8') as file:
                 pleiotropy = file.read()
 
             template = self.prompt_template
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
             # 保存输出结果
-            with open(os.path.join(snp_path, 'LLM_result.txt'), 'w') as file:
+            with open(os.path.join(snp_path, 'LLM_result.txt'), 'w', encoding='utf-8') as file:
                 file.write(gpt_out)
         else:
             gpt_out = None
@@ -342,71 +345,71 @@ if __name__ == '__main__':
     from key import AI_key, mr_key
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_template_zero_shot, prompt_name='LLM_MR_template_zero_shot',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_template_few_knowledge,
                                prompt_name='LLM_MR_template_few_knowledge',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_template_one_shot, prompt_name='LLM_MR_template_one_shot',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_template_one_shot_and_knowledge,
                                prompt_name='LLM_MR_template_one_shot_and_knowledge',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_template_zero_shot_CoT,
                                prompt_name='LLM_MR_template_zero_shot_CoT',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_template_zero_shot_CoT_and_knowledge,
                                prompt_name='LLM_MR_template_zero_shot_CoT_and_knowledge',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_MOE_template_zero_shot,
                                prompt_name='LLM_MR_MOE_template_zero_shot',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR_MOE',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR_MOE',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_MOE_template_few_knowledge,
                                prompt_name='LLM_MR_MOE_template_few_knowledge',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR_MOE',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR_MOE',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_MOE_template_one_shot,
                                prompt_name='LLM_MR_MOE_template_one_shot',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR_MOE',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR_MOE',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_MOE_template_one_shot_and_knowledge,
                                prompt_name='LLM_MR_MOE_template_one_shot_and_knowledge',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR_MOE',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR_MOE',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_MOE_template_zero_shot_CoT,
                                prompt_name='LLM_MR_MOE_template_zero_shot_CoT',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR_MOE',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR_MOE',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()
 
     agent = MRAgentTest9Prompt(prompt_template=LLM_MR_MOE_template_zero_shot_CoT_and_knowledge,
                                prompt_name='LLM_MR_MOE_template_zero_shot_CoT_and_knowledge',
-                               LLM_model='gpt-4o', AI_key=AI_key, model='MR_MOE',
+                               LLM_model='gpt-4o', base_url="https://api.gpt.ge/v1/", AI_key=AI_key, model='MR_MOE',
                                gwas_token=mr_key, test_csv_path='mr_prompt_test.csv')
     agent.step9()

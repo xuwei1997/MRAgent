@@ -707,10 +707,3 @@ def get_synonyms(term, api_key):
     print(synonyms)
 
     return synonyms
-
-
-if __name__ == '__main__':
-    # a = get_paper_details_pmc(
-    #     'Association between gut microbiota and preeclampsia-eclampsia: a two-sample Mendelian randomization study')
-    # print(a)
-    MRtool_MRlap("ukb-b-10807", "ukb-d-M13_LOWBACKPAIN", "test1", 423217, 361194)
