@@ -68,7 +68,6 @@ def anthropic_chat_openai(text, AI_key, model_name='claude-3-opus-20240229'):
     return chat_response.choices[0].message.content
 
 
-
 def qwen_chat(text, AI_key, model_name='qwen-max-0403'):
     openai_api_key = AI_key
     client = OpenAI(api_key=openai_api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
@@ -83,14 +82,18 @@ def qwen_chat(text, AI_key, model_name='qwen-max-0403'):
 
     return chat_response.choices[0].message.content
 
+
 def llm_chat(text, model_name, AI_key=None, base_url=None):
-    if 'gpt' in model_name:
-        return openAI_gpt(text, AI_key, model_name, base_url)
-    elif 'gemini' in model_name:
-        return gemini_chat(text, model_name, AI_key)
-    elif 'claude' in model_name:
-        return anthropic_chat(text, model_name, AI_key)
-    elif 'qwen-max' in model_name:
-        return qwen_chat(text, AI_key, model_name)
+    if base_url == None:
+        if 'gpt' in model_name:
+            return openAI_gpt(text, AI_key, model_name, base_url)
+        elif 'gemini' in model_name:
+            return gemini_chat(text, model_name, AI_key)
+        elif 'claude' in model_name:
+            return anthropic_chat(text, model_name, AI_key)
+        elif 'qwen-max' in model_name:
+            return qwen_chat(text, AI_key, model_name)
+        else:
+            return ollama_chat(text, model_name)
     else:
-        return ollama_chat(text, model_name)
+        return openAI_gpt(text, AI_key, model_name, base_url)
