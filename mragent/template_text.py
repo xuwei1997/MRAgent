@@ -62,7 +62,20 @@ LLM_MR_template = """Below is a csv file of the results of Mendelian randomizati
 {heterogeneity}
 
 #Pleiotropy test results table
-{pleiotropy}"""
+{pleiotropy}
+
+I will also give another completed report for your reference.
+
+The referenced report:
+
+Mendelian randomization (MR) analyses of fresh fruit intake (ukb-b-3881) and asthma (finn-b-J10_ASTHMA) was conducted using summary data from genome-wide association studies (GWAS). Five different MR methods including MR Egger regression, weighted median, inverse variance weighted, simple mode and weighted mode were applied. 53 single nucleotide polymorphisms (SNPs) were included in the final MR analysis.
+
+The MR analyses provided evidence that higher fruit intake causally decreases asthma risk. Specifically, the inverse-variance weighted (IVW) algorithm showed a statistically significant association between fruit intake and lower asthma risk (OR = 0.509, 95% CI: 0.334 - 0.775; P = 0.001). Furthermore, this causal association was supported by the weighted median (OR = 0.499, 95% CI: 0.274 - 0.907; P = 0.02). All methods were directionally consistent.
+
+A series of sensitivity analyses were conducted to evaluate potential sources of bias heterogeneity and pleiotropy in our MR analysis. First, we conducted heterogeneity testing using the IVW and MR-Egger methods, and the results revealed no heterogeneity among the instruments (Q pval >0.05). Next, MR-Egger regression intercepts were examined to detect the horizontal pleiotropy, defined as a genetic variant influencing both exposure and outcome through independent biological pathways and no evidence of pleiotropy was identified (P = 0.44).  
+
+In summary, this Mendelian randomization analysis provides supportive evidence that higher fresh fruit intake has a causal protective effect on reducing asthma risk. Sensitivity analyses validated the robustness of these causal relationships against biases from pleiotropy, outliers or reverse causation.
+"""
 
 
 LLM_MR_MOE_template = """Below is a csv file of the results of Mendelian randomization analysis with Exposure: {Exposure} (GWAS ID: {Exposure_id}) and Outcome: {Outcome} (GWAS ID: {Outcome_id}).
@@ -76,7 +89,21 @@ Please read and understand the results in the table and generate a paragraph des
 {heterogeneity}
 
 #Pleiotropy test results table
-{pleiotropy}"""
+{pleiotropy}
+
+I will also give another completed report for your reference.
+
+The referenced report:
+The Mendelian randomization (MR) analysis, leveraging the Mixture of experts (MOE) function in TwoSampleMR, investigated the causal relationship between Type 2 diabetes (Exposure; GWAS ID: ebi-a-GCST006867) and Bone mineral density (Outcome; GWAS ID: ebi-a-GCST90014022). The results span various MR methods, displaying a range of estimates for the causal effect, alongside their precision and statistical significance.
+
+The Penalised mode method yielded a statistically significant association (b = 0.0330, SE = 0.0083, CI: 0.0168 to 0.0493, p = 0.00012), suggesting a potential causal relationship between Type 2 diabetes and an increased risk of Bone mineral density. This outcome was corroborated by the Random Effects Inverse Variance Weighted (RE IVW) and Fixed Effects Egger (FE Egger) methods, although with varying effect sizes and confidence intervals, indicating some differences in the robustness and interpretation of the causal estimate across these methods.
+
+The analysis performed checks for both heterogeneity and pleiotropy, critical aspects that can affect the validity of MR estimates. The heterogeneity analysis, assessed through the Cochran’s Q test, indicated no significant heterogeneity across the instrumental variables used in the IVW (Q = 1159.35, P = 1.46E-173) and Egger (Q = 1160.9793, P = 2.1555E-174) methods, suggesting that the instrumental variables contributed similarly to the estimation of the causal effect. The pleiotropy test, using the Egger intercept, showed no evidence of pleiotropy (intercept = 0.000795, SE = 0.00162, p = 0.625171), implying that the instrumental variables were not affecting the outcome through pathways other than the exposure, thus supporting the validity of the MR findings.
+
+These comprehensive analyses, when considered together, provide evidence to suggest a potential causal association between Type 2 diabetes and Bone mineral density. The consistency of significant findings across multiple MR methods strengthens the confidence in the observed association, albeit recognizing the importance of further investigative studies to confirm these results and elucidate underlying mechanisms.
+"""
+
+
 
 LLM_conclusion_template = """Below is all results report of Mendelian randomization analysis with Exposure: {Exposure} and Outcome: {Outcome}.
 I conducted MR studies using different SNPs from Outcome and Exposure in the openGWAS database. Below are the results of the study for the different SNPs, differentiated by GWAS ID. Please help me to summarise the above results and write CONCLUSION in academic language to analyse whether there is a causal effect of Outcome: {Outcome} and Exposure: {Exposure}.
