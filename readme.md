@@ -1,5 +1,5 @@
 # MRAgent: An LLM-based Automated Agent for Causal Knowledge Discovery in Disease via Mendelian Randomization
-[GitHub](https://github.com/xuwei1997/MRAgent) | [PyPI](https://pypi.org/project/mragent/)
+[GitHub](https://github.com/xuwei1997/MRAgent) | [PyPI](https://pypi.org/project/mragent/) | [Zenodo](https://doi.org/10.5281/zenodo.14184396)
 
 ## Overview
 
@@ -48,6 +48,8 @@ The following LLM APIs are currently supported:
 - [Google Gemini](https://ai.google.dev/#gemini-api)
 - [Anthropic Claude](https://www.anthropic.com/claude)
 - [Aliyun Qwen](https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true)
+
+MRAgent is also compatible with all models available on any platform that supports the OpenAI API, simply ensure that the base_url is correctly specified for use.
 
 You can also run LLM locally, and we currently support all open source models running on ollama:
 
@@ -155,7 +157,11 @@ agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
 ```
 
 #### Output:
-You can find the output in the `output` folder. Every time it runs, a folder named `Disease_Model` is generated under the `output` folder. Inside this folder, you will find three data tables: `exposure_and_outcome`, which records paired exposure and outcome information, including study titles, previous MR analyses, and available GWAS data; `outcome`, which captures information on individual outcomes or exposures, including a complete list of GWAS IDs; and `run`, which records the final selected exposure and outcome pairs used for MR analysis.
+You can find the output in the `output` folder. Every time it runs, a folder named `Disease_Model` is generated under the `output` folder.
+
+Inside this folder, you will find three data tables: `exposure_and_outcome`, which records paired exposure and outcome information, including study titles, previous MR analyses, and available GWAS data; `outcome`, which captures information on individual outcomes or exposures, including a complete list of GWAS IDs; and `run`, which records the final selected exposure and outcome pairs used for MR analysis. MRAgent can be run step-by-step, and you can manually adjust these three tables at any point to control the workflow.
+
+In the subfolders of `Disease_Model`, you can view various MR results along with their corresponding reports. These subfolders contain detailed outputs for each analysis, including statistical results, plots, and other relevant documentation for interpretation.
 
 ### "Causal Validation" mode
 
@@ -239,19 +245,24 @@ agent.run(step=[1, 2, 3, 4, 5, 6, 7, 8, 9])
 ```
 
 #### Output:
-You can find the output in the `output` folder. Every time it runs, a folder named `Disease_Model` is generated under the `output` folder. Inside this folder, you will find three data tables: `exposure_and_outcome`, which records paired exposure and outcome information, including study titles, previous MR analyses, and available GWAS data; `outcome`, which captures information on individual outcomes or exposures, including a complete list of GWAS IDs; and `run`, which records the final selected exposure and outcome pairs used for MR analysis.
+You can find the output in the `output` folder. Every time it runs, a folder named `Disease_Model` is generated under the `output` folder.
+
+Inside this folder, you will find three data tables: `exposure_and_outcome`, where the exposure and outcome pairs are provided during initialization; `outcome`, which captures information on individual outcomes or exposures, including a complete list of GWAS IDs; and `run`, which records the final selected exposure and outcome pairs used for MR analysis. MRAgent can be run step-by-step, and you can manually adjust these three tables at any point to control the workflow.
+
+In the subfolders of `Disease_Model`, you can view various MR results along with their corresponding reports. These subfolders contain detailed outputs for each analysis, including statistical results, plots, and other relevant documentation for interpretation.
 
 
 ## Experiments
 
-1. step_1_test_out.py
-2. step_1_test_SimCSE.py
-3. step_2_test.py
-4. step_3_test.py
-5. step_5_test.py
-6. step_9_test_out.py
-7. step_9_test_SimCSE.py
+1. step_1_test_out.py: Outputs the results for Identifying the Exposure and Outcome.
+2. step_1_test_SimCSE.py: Calculates the similarity between the exposure-outcome pairs extracted by the LLM and those extracted by humans using SimCSE.
+3. step_2_test.py: Evaluation of Checking Previous MR Analyses, assessing the consistency and relevance of previous Mendelian Randomization analyses.
+4. step_2_test_STROBE_MR.py: Tests the evaluation of completed MR analyses using the STROBE-MR checklist.
+5. step_5_test.py: Evaluation of Selecting Relevant GWAS, ensuring that the most appropriate Genome-Wide Association Studies are selected for analysis.
+6. step_9_test_out.py: Interpreting the MR Results outputs by LLM.
+7. step_9_test_SimCSE.py: Calculating the similarity between the report generated by the LLM and a reference report written by humans using SimCSE.
 
+The source files generated by the test code have been uploaded to Zenodo and can be accessed at [https://doi.org/10.5281/zenodo.14184396](https://doi.org/10.5281/zenodo.14184396).
 ## Citation
 
 > TODO
