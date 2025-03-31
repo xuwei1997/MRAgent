@@ -1,4 +1,4 @@
-from .agent_workflow import MRAgent
+from mragent.agent_workflow import MRAgent
 import pandas as pd
 import os
 

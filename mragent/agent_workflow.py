@@ -1,8 +1,8 @@
 import re
 import pandas as pd
-from .agent_tool import *
+from mragent.agent_tool import *
 
-from .template_text import MRorNot_text, synonyms_text, gwas_id_text, pubmed_text, LLM_MR_template, LLM_MR_MOE_template, \
+from mragent.template_text import MRorNot_text, synonyms_text, gwas_id_text, pubmed_text, LLM_MR_template, LLM_MR_MOE_template, \
     LLM_conclusion_template, LLM_Introduction_template, pubmed_text_obo, LLM_template_MR_effect_evaluation
 import os
 
@@ -12,11 +12,11 @@ from reportlab.lib.styles import getSampleStyleSheet
 from PyPDF2 import PdfMerger
 import time
 import sys
-from .LLM import llm_chat
+from mragent.LLM import llm_chat
 import json
 import math
 from functools import cached_property
-from .agent_tool import timer
+from mragent.agent_tool import timer
 
 
 
@@ -70,11 +70,11 @@ class MRAgent:
     # 定义path并创建文件夹
     def define_path(self):
         if self.mode == 'OE':
-            self.path = os.path.join('output', self.exposure + '_' + self.outcome + '_' + self.LLM_model)
+            self.path = os.path.join('./output', self.exposure + '_' + self.outcome + '_' + self.LLM_model)
         elif self.mode == 'O':
-            self.path = os.path.join('output', self.outcome + '_' + self.LLM_model)
+            self.path = os.path.join('./output', self.outcome + '_' + self.LLM_model)
         elif self.mode == 'E':
-            self.path = os.path.join('output', self.exposure + '_' + self.LLM_model)
+            self.path = os.path.join('./output', self.exposure + '_' + self.LLM_model)
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
