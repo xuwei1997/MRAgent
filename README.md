@@ -45,11 +45,8 @@ Before using MRAgent, you need to obtain the API Key for the LLMs, or run the LL
 The following LLM APIs are currently supported:
 
 - [OpenAI GPT](https://platform.openai.com/docs/overview)
-- [Google Gemini](https://ai.google.dev/#gemini-api)
-- [Anthropic Claude](https://www.anthropic.com/claude)
-- [Aliyun Qwen](https://help.aliyun.com/zh/dashscope/developer-reference/api-details?disableWebsiteRedirect=true)
 
-MRAgent is also compatible with all models available on any platform that supports the OpenAI API, simply ensure that the base_url is correctly specified for use.
+MRAgent is also compatible with all models available on any platform that supports the OpenAI API, simply ensure that the **base_url** is correctly specified for use.
 
 You can also run LLM locally, and we currently support all open source models running on ollama:
 
@@ -114,11 +111,13 @@ class MRAgent(self, mode='O', exposure=None, outcome=None, AI_key=None, model='M
     - Whether to print the introduction of the disease befor the MR.
 - LLM_model: str, optional (default='gpt-4o')
     - The LLM model used in the MRAgent.
+- model_type: str, 'openai' or 'ollama', optional (default='openai')
+    - The model type of the LLM. 'openai' for using the openai api, 'ollama' for using a local model
 - base_url: str, optional (default=None)
     - The base url for the OpenAI GPT model. Used for compatibility with third-party API platforms.
 - gwas_token: str, optional (default=None)
     - The GWAS token for the OpenGWAS data.
-- opengwas_model: str, 'csv' or 'online' optional (default='csv')
+- opengwas_model: str, 'csv' or 'online' optional (default='online')
     - The model of the OpenGWAS data. 'csv' for the local OpenGWAS data. 'online' for the online OpenGWAS data.
 - mr_quality_evaluation: bool, optional (default=False)
     - Whether to evaluate the quality of the MR analysis using the STROBE-MR guidelines. For more information on
@@ -201,11 +200,13 @@ class MRAgentOE(self, mode='OE', exposure=None, outcome=None, AI_key=None, model
     - Whether to print the introduction of the disease befor the MR.
 - LLM_model: str, optional (default='gpt-4o')
     - The LLM model used in the MRAgent.
+- model_type: str, 'openai' or 'ollama', optional (default='openai')
+    - The model type of the LLM. 'openai' for using the openai api, 'ollama' for using a local model
 - base_url: str, optional (default=None)
     - The base url for the OpenAI GPT model. Used for compatibility with third-party API platforms.
 - gwas_token: str, optional (default=None)
     - The GWAS token for the OpenGWAS data.
-- opengwas_model: str, 'csv' or 'online' optional (default='csv')
+- opengwas_model: str, 'csv' or 'online' optional (default='online')
     - The model of the OpenGWAS data. 'csv' for the local OpenGWAS data. 'online' for the online OpenGWAS data.
 - mr_quality_evaluation: bool, optional (default=False)
     - Whether to evaluate the quality of the MR analysis using the STROBE-MR guidelines. For more information on
