@@ -264,7 +264,7 @@ class MRAgentTest9Prompt(MRAgent):
             template = self.prompt_template
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url, self.model_type)
             # print(gpt_out)
             # 保存输出结果
             with open(os.path.join(snp_path, 'LLM_result.txt'), 'w', encoding='utf-8') as file:
@@ -281,7 +281,7 @@ class MRAgentTest9Prompt(MRAgent):
             template = self.prompt_template
             t = template.format(Outcome=Outcome, Exposure=Exposure, MRresult=MRresult, heterogeneity=heterogeneity,
                                 pleiotropy=pleiotropy, Exposure_id=Exposure_id, Outcome_id=Outcome_id)
-            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url)
+            gpt_out = llm_chat(t, self.LLM_model, self.AI_key, self.base_url, self.model_type)
             # 保存输出结果
             with open(os.path.join(snp_path, 'LLM_result.txt'), 'w', encoding='utf-8') as file:
                 file.write(gpt_out)
