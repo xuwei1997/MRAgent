@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mragent"
-version = "0.2.4"
+version = "0.2.5"
 description = "MRAgent: An LLM-based Automated Agent for Causal Knowledge Discovery in Disease via Mendelian Randomization"
 authors = ["XU WEI <xuwei_chn@foxmail.com>"]
 readme = "README.md"
