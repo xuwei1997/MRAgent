@@ -1,5 +1,5 @@
 # MRAgent: An LLM-based Automated Agent for Causal Knowledge Discovery in Disease via Mendelian Randomization
-[Paper](https://doi.org/10.1093/bib/bbaf140) | [GitHub](https://github.com/xuwei1997/MRAgent) | [PyPI](https://pypi.org/project/mragent/) | [Zenodo](https://doi.org/10.5281/zenodo.14184396) | [Web Demo](https://huggingface.co/spaces/xuwei1997/MRAgent)
+[Paper](https://doi.org/10.1093/bib/bbaf140) | [GitHub](https://github.com/xuwei1997/MRAgent) | [PyPI](https://pypi.org/project/mragent/) | [Zenodo](https://doi.org/10.5281/zenodo.14184396) | [Web Demo](https://huggingface.co/spaces/xuwei1997/MRAgent) | [中文文档](https://p1bvxbwjxl0.feishu.cn/docx/L0ogdoDs5ofjIux6W6gct8E4nyd?from=from_copylink)
 
 ## Overview
 
