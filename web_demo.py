@@ -9,6 +9,10 @@ import shutil
 import subprocess
 from mragent import MRAgent, MRAgentOE
 import threading
+import streamlit.components.v1 as components
+
+
+
 
 # 设置页面配置
 st.set_page_config(page_title="MRAgent Demo", layout="wide")
@@ -18,7 +22,7 @@ st.title("MRAgent: An LLM-based Automated Agent for Causal Knowledge Discovery")
 st.markdown("""
 This demo allows you to run MRAgent for causal knowledge discovery in disease via Mendelian Randomization.
 """)
-st.markdown("[Paper](https://doi.org/10.1093/bib/bbaf140) | [GitHub](https://github.com/xuwei1997/MRAgent) | [PyPI](https://pypi.org/project/mragent/) | ")
+st.markdown("[Paper](https://doi.org/10.1093/bib/bbaf140) | [GitHub](https://github.com/xuwei1997/MRAgent) | [PyPI](https://pypi.org/project/mragent/) | [中文文档](https://p1bvxbwjxl0.feishu.cn/docx/L0ogdoDs5ofjIux6W6gct8E4nyd?from=from_copylink)")
 
 # 模式选择
 mode = st.selectbox("Select Mode", ["Knowledge Discovery", "Causal Validation"])
@@ -60,9 +64,34 @@ with col1:
     ai_key = st.text_input("AI Key (Required)", type="password")
 with col2:
     base_url = st.text_input("Base URL (Optional)")
+# with col3:
+#     llm_model = st.selectbox("LLM Model",
+#                              ["gpt-4o", "gpt-4", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet", "gemini-pro"])
+
+# 修改后的代码
 with col3:
-    llm_model = st.selectbox("LLM Model",
-                             ["gpt-4o", "gpt-4", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet", "gemini-pro"])
+    # 预定义的模型列表
+    predefined_models = ["gpt-4.1", "gpt-4o", "gpt-4.1-mini", "deepseek-r1", "gemini-2.5-pro"]
+    # 添加一个“自定义”选项
+    options = predefined_models + ["Custom..."]
+
+    # 创建下拉选择框
+    selected_option = st.selectbox(
+        "LLM Model",
+        options,
+        help="Select a predefined model or choose 'Custom' to enter your own."
+    )
+
+    # 如果用户选择“自定义”，则显示一个文本输入框
+    if selected_option == "Custom...":
+        llm_model = st.text_input(
+            "Enter Custom Model Name:",
+            placeholder="e.g., gpt-4o-2024-05-13",
+            key="custom_llm_model_input"
+        )
+    else:
+        # 否则，使用选择的模型
+        llm_model = selected_option
 
 col1, col2 = st.columns(2)
 with col1:
@@ -439,3 +468,20 @@ if 'agent_path' in st.session_state and st.session_state.agent_path:
         # 在最后面显示下载按钮
         st.markdown("#### Download Results")
         create_download_button(st.session_state.agent_path)
+
+
+# # 百度统计
+components.html(
+'''
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?d8a4c130d7263e954bf9df2496e692c3";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+''',
+    height=30)
